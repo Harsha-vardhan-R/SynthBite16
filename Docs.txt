@@ -1,0 +1,99 @@
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+SynthBite16 - A 16 bit computer with complete micro-programmed control
+Design, implementation and documentations by 'HarshaVardhan Rapeti'
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+-----------------------------------------
+The design mainly focuses on : 
+
+1 -> FLEXIBILITY - Leftover microinstructions can be modified by the user to create their custom instructions.
+2 -> INSTRUCTION SET COMPLETENESS - All basic instructions that are required for a basic computer will be implemented
+3 -> COOL EXTRA INSTRUCTIONS - Instructions for calculating some video game related calculations.
+			     - for example : Inverse of the number in AC, Square root etc...
+------------------------------------------
+
+INSTRUCTION FORMAT
+------------------
+
+General Instruction format:
+
+    'XXXX XXXX XXXX XXXX'
+     ^^^^ ^^^^ ^^^^ ^^^^
+      1    2    3    4
+
+
+1       ->  CONTAINS THE OP-CODE(12-14) AND THE MODE OF ADDRESSING(15). 
+2, 3, 4 ->  CONTAINS THE OPERAND, CAN BE A ADDRESS OR DATA DIRECTLY - WILL BE DISTINGUISHED FROM THE OP-CODE 
+
+*the numbers in the bracketts represent the part of the respective data in the whole word.
+**indexing starts from 0 from the LSB.
+
++++AS YOU CAN SEE THE WORD(16 bits) CAN BE DIVIDED INTO 4 '4-bit' 'BINARY REPRESENTED HEX VALUES' OR A NIBBLE.
++++SO ALL THE INSTRUCTIONS FROM NOW ON WILL BE REPRESENTED AS 4 HEX VALUES, WHICH IS EQUAL TO THE WHOLE WORD.
++++ANY X MEANS 'DO NOT CARE ABOUT THOSE VALUES WHILE DECODING THE INSTRUCTION'
+
+
+
+
+REGISTERS AND THEIR USES
+------------------------
+ 
+Name	Size(bits)	FullForm		Use
+-------------------------------------------------------------------------------------------------------------
+AC	16		ACCUMULATOR		STORES THE CURRENT DATA WE ARE WORKING WITH.
+PC	12		PROGRAM COUNTER		STORES THE ADDRESS OF THE NEXT INSTRUCTION TO BE EXECUTED.
+DR 	16		DATA REGISTER		STORES THE OPERAND OF AN INSTRUCTIONS(VALUE AT ADDRESS WILL BE THE OPERAND).
+IR	16		INSTRUCTION REGISTER	STORES THE CURRENT FULL INSTRUCTION WORD(TO BE DECODED AND EXECUTED).
+AR	12		ADDRESS REGISTER	STORES THE ADDRESS FROM 'PC'(TYPICALLY), CAN STORE ANY ADDRESS. 
+CR	8		COMPARISION REGISTER	STORES THE RESULTS FROM A 'CMP' INSTRUCTION.
+INPR	8		INPUT REGISTER		STORES AN INPUT(CHAR) FROM AN EXTERNAL DEVICE.
+OUTR	8		OUTPUT REGISTER		STORES THE OUTPUT CHAR.
+
+
+
+
+
+
+STATUS BITS AND THEIR USES
+--------------------------
+
+Name	FullForm		Use
+---------------------------------------------------------------------------------------------------------------
+E	OVERFLOW(TYPICALY)	CAN SEE THE OVERFLOW WHILE PERFORMING ARTHIMETIC ON AC USING ALU.
+IEN	INTERRUPT ENABLE	WILL DECIDE IF INTERRUPT CAN OCCUR OR NOT(IF 0 INTERRUPT HAS TO WAIT FOR NEXT INSTRUCTION...).
+R	INTERRUPT FLIP-FLOP	TELLS THE CPU TO SERVICE THE INTERRUPT.
+FGI	INPUT FLAG		WILL TELL YOU IF YOU NEED TO DO AN INTERRUPT AND DO SOMETHING WITH THE INPUT.
+FGO 	OUTPUT FLAG		WILL TELL YOU IF SOME DEVICE IS WAITING FOR AN OUTPUT.
+
+
+
+
+
+
+
+VIRTUAL STATUS BITS AND THEIR USES
+----------------------------------
+--they are not any extra registers, they are a part of an existing registers, but convey something other than the rest of the bits.
+
+
+Position	Use
+----------------------------------------------------------------------------------------------------------------
+AC(15)		SIGN OF THE NUMBER IF THERE IS ONE IN THE ACCUMULATOR
+IE(15)		DIRECT AND INDIRECT ADDRESSING BIT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
