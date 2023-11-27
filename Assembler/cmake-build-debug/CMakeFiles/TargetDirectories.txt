@@ -1,0 +1,3 @@
+/home/harshavardhan/Documents/logisim_proj/SynthBite16/Assembler/cmake-build-debug/CMakeFiles/Assembler.dir
+/home/harshavardhan/Documents/logisim_proj/SynthBite16/Assembler/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/harshavardhan/Documents/logisim_proj/SynthBite16/Assembler/cmake-build-debug/CMakeFiles/rebuild_cache.dir

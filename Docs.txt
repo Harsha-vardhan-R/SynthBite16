@@ -176,8 +176,10 @@ HOW THIS WORKS(HOW ARE INSTRUCTIONS EXECUTED)
 			=> 8 D X X -> PLACE THE VALUE OF AC IN THE OUPUT REGISTER. 
 
 
-* 8 E X X 
-* 8 F X X 
+
+* LEFT OVER INSTRUCTION ADDRESSES IN 2 NIBBLE OP-CODES. CAN HAVE WAY MORE THAN THIS, BUT IT WILL OVERCOMPLICATE THE SYSTEM.
+- 8 E X X 
+- 8 F X X 
 
 **here the terms microoperations, microinstructions and instructions are loosely used , please understand the referred term based on the context.
 	
