@@ -2,7 +2,10 @@
 #include <unordered_map>
 #include <string>
 #include <fstream>
+#include <sstream>
+#include <regex>
 #include <filesystem>
+
 
 /// usage : synthasm [input-file] [output-file-path]\n
 ///
@@ -74,20 +77,20 @@
 ///\nFORMAT IN WHICH THE CODE SHOULD BE PROVIDED :
 
 ///\nall the data SHOULD be of a hex value in the form of '0xhhhh'and should have a value of 2 bytes.
-///\n.data:
-///\n    name : 0xhhhh;
-///\n    name2 : 0xhhhh;
+///\ndata:
+///\n    name 0xhhhh;
+///\n    name2 0xhhhh;
 ///\n    :
-///\n    name3 : %name2;        //this is going to store the address of name2 in the memory. for eg : \nname2 :
+///\n    name3 &name2;        //this is going to store the address of name2 in the memory. for eg : \name2 :pointer should always be declared after the original declaration.
+///\n
+///\n
+///\ninstructions:
 ///\n
 ///\n
 ///\n
 ///\n
 ///\n
-///\n
-///\n
-///\n
-///\n
+///\nsubroutine1:
 ///\n
 ///\n
 ///\n
@@ -102,7 +105,7 @@
 
 //"v3.0 hex words addressed"
 
-struct synthasm{};
+struct [[maybe_unused]] synthasm{};
 //*************************************************************
 
 //In the 7 instructions that require you to give the operand as an address or data,
@@ -116,7 +119,7 @@ enum AddressingMode {
 };
 
 //first 4 bits of the instruction in the memory
-std::unordered_map<std::string, char> FIRST_BIT_MAP = {
+const std::unordered_map<std::string, char> FIRST_BIT_MAP = {
         {"psh" , '8'},
         {"pop" , '8'},
         {"ads" , '8'},
@@ -152,7 +155,7 @@ std::unordered_map<std::string, char> FIRST_BIT_MAP = {
 };
 
 //second 4 bits of the instruction in the memory
-std::unordered_map<std::string, char> SECOND_BIT_MAP = {
+const std::unordered_map<std::string, char> SECOND_BIT_MAP = {
         {"psh" , '0'},
         {"pop" , '1'},
         {"ads" , '2'},
@@ -188,27 +191,79 @@ std::unordered_map<std::string, char> SECOND_BIT_MAP = {
         {"swp" , '\0'},{"swp%" , '\0'},
 };
 
-//we are going to leave the first 256 words free, 'cause we may need to write a bootloader or something.
-auto PRESENT_DATA_ADDRESS = 0x100;
-
-
+//we are going to leave the first 256 words free, 'cause we may need to write a bootloader or some shit.
+auto START_ADDRESS = 0x100;
+auto DATA_START_ADDRESS = 0x0;//need to change this while running based on the amount of instructions.
 
 int main(int argc, char* argv[]) {
 
-    if (argc == 1) {
-        printf("Please provide the file that needs to be assembled");
+    //Check for correct number of arguments.
+    if (argc < 2 || argc > 3) {
+        std::cerr << "Usage: " << argv[0] << " <input_filename> [output_filename]" << std::endl;
         return -1;
     }
 
+    //Checking for the extension name of the input file.
+    //I do not even know why i am doing this shit!
+    std::string InputFileName = argv[1];
+    if (std::filesystem::path(InputFileName).extension() != ".hasm") {
+        std::cerr << "The input file must have the extension '.hasm'" << std::endl;
+        //return -1;
+    }
+
+    //creating the output file
     std::string output_file_name;
-
     if (argc == 2) {
-        output_file_name = argv[1] + ""
+        output_file_name = std::filesystem::path(InputFileName).parent_path().string() + "/out.octet-stream";
+    } else if (argc == 3) {
+        if (std::filesystem::path(argv[2]).extension() != ".octet-stream") {
+            std::cerr << "The output file name should have .octet-stream as the extension" << std::endl;
+            return -1;
+        }
+        output_file_name = argv[2];
     }
 
-    for (auto i : SECOND_BIT_MAP) {
-        std::cout << i.first << " : " << i.second << std::endl;
+    //Opening the input file.
+    std::ifstream InFile(InputFileName);
+    if (!InFile.is_open()) {
+        std::cerr << "Couldn't open the specified file" << std::endl;
+        return -1;
     }
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
+
+    std::cout << output_file_name << "\n";
+
+    //Creating the output file
+    std::ofstream OutputFile(output_file_name, std::ios::binary | std::ios::out);
+    if (!OutputFile.is_open()) {
+        std::cerr << "Failed to create the output file" << std::endl;
+        return -1;
+    }
+
+
+
+    //Reading the input file to a string to tokenize the string.
+    std::stringstream InputFileStream;
+    InputFileStream << InFile.rdbuf();
+    std::string InputData = InputFileStream.str();
+    InFile.close();
+
+    //Vector of tokens.
+    std::vector<std::string> tokens;
+    std::regex pattern(R"(\s+|:|=)");
+    //Creating the vector by tokenizing using regex.
+    std::sregex_token_iterator tokenIterator(InputData.begin(), InputData.end(), pattern, -1);
+    std::sregex_token_iterator end;//empty iter
+    while (tokenIterator != end) {
+        tokens.push_back(tokenIterator->str());
+        std::cout << tokenIterator->str() << "\n";
+        OutputFile << tokenIterator->str();
+        tokenIterator++;
+    }
+
+
+    int DataIndex, InstructionsIndex;
+    //Finding the positions of the 'data:' and 'instructions:'
+
+    OutputFile.close();
+    return 1;
 }
