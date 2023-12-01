@@ -30,7 +30,7 @@
 ///\n
 ///\n-OPERAND IS NOT REQUIRED : INSTRUCTION FORMAT 0-X-X-X OR 8-X-X-X
 ///\n
-///\n-INSTRUCTIONS MANIPULATING DATA :
+///\n-INSTRUCTIONS MANIPULATING DATA ://positions of the 'data:' and 'instructions:'
 ///\n
 ///\n-INSTRUCTIONS ON THE STACK :
 ///\n=> 8 0 X X -> PSH  -> PUSH ONTO THE STACK		        -> (STACK TOP <- DR, SP <- SP + 1)
@@ -99,6 +99,7 @@
 ///\n
 ///\n
 ///\n
+
 
 
 
@@ -192,8 +193,8 @@ const std::unordered_map<std::string, char> SECOND_BIT_MAP = {
 };
 
 //we are going to leave the first 256 words free, 'cause we may need to write a bootloader or some shit.
-auto START_ADDRESS = 0x100;
-auto DATA_START_ADDRESS = 0x0;//need to change this while running based on the amount of instructions.
+unsigned int PRESENT_ADDRESS = 0x101;
+unsigned int DATA_START_ADDRESS = 0x0;//need to change this while running based on the amount of instructions.
 
 int main(int argc, char* argv[]) {
 
@@ -230,7 +231,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    std::cout << output_file_name << "\n";
+    std::cout << "Saving at : " << output_file_name << "\n";
 
     //Creating the output file
     std::ofstream OutputFile(output_file_name, std::ios::binary | std::ios::out);
@@ -238,7 +239,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "Failed to create the output file" << std::endl;
         return -1;
     }
-
 
 
     //Reading the input file to a string to tokenize the string.
@@ -249,20 +249,92 @@ int main(int argc, char* argv[]) {
 
     //Vector of tokens.
     std::vector<std::string> tokens;
-    std::regex pattern(R"(\s+|:|=)");
+    std::regex pattern(R"(\s+|:|=|;)");
     //Creating the vector by tokenizing using regex.
     std::sregex_token_iterator tokenIterator(InputData.begin(), InputData.end(), pattern, -1);
-    std::sregex_token_iterator end;//empty iter
+    std::sregex_token_iterator end;//empty iter(matches with an exhausted iterator)
     while (tokenIterator != end) {
-        tokens.push_back(tokenIterator->str());
-        std::cout << tokenIterator->str() << "\n";
-        OutputFile << tokenIterator->str();
+        if (!tokenIterator->str().empty()) {
+            tokens.push_back(tokenIterator->str());
+        }
         tokenIterator++;
     }
 
+    ///Process of assembling :
+    ///First we are going to iterate over the data and create a symbol tree for it.
+    ///we do not know how many instructions will be present, so we need to store instructions after storing the data.
+    ///at 0x100 we are going to store the address from which the instructions are starting which we are going to jump to indirectly from the bootstrap.
+    ///the status bit for the jump will be set in the boot strap.
 
-    int DataIndex, InstructionsIndex;
-    //Finding the positions of the 'data:' and 'instructions:'
+    //Start assembling!
+    //positions of the 'data:' and 'instructions:'
+    std::tuple<unsigned int , unsigned int> Data, Instructions;
+    //positions of other subroutines (where it starts and where it ends).
+    std::vector<std::tuple<std::string, unsigned int, unsigned int>> Subroutines;
+    int index1 = 0;
+    for (auto const& token : tokens) {
+        if (tokens.at(0) == ";") {//if it is a comment we are going to continue over till we find out a new line character.
+            while (token != "\n") {
+                index1++;
+            }
+        } else if (token == ".data") {
+            Data = std::make_tuple(index1, 0);
+        } else if (token == ".instructions") {
+            Instructions = std::make_tuple(index1, 0);
+            Data = std::make_tuple(std::get<0>(Data), index1);
+        }
+        index1++;
+    }
+    Instructions = std::make_tuple(std::get<0>(Instructions), index1);
+    //Setting the subroutines starting and ending positions.
+    int SubroutineNumber = 0;
+    index1 = 0;
+    for (auto const& token : tokens) {
+        if (token.at(0) == '.') {
+            Subroutines.emplace_back(token, index1, 0);
+            if (index1 != 0) {
+                Subroutines[SubroutineNumber-1] = std::make_tuple(std::get<0>(Subroutines[SubroutineNumber-1]), std::get<1>(Subroutines[SubroutineNumber-1]), index1);
+            }
+            SubroutineNumber++;
+        }
+    }
+
+    //Stores the variable name and the address at which it is stored.
+    std::unordered_map<std::string, unsigned int> DataAddressMap;
+    //Stores the data part of the code in a sequential order, which is later used to write into the output file.
+    std::vector<unsigned int> MachineData;
+    for (unsigned int TokenIndex = std::get<0>(Data) + 1; TokenIndex < std::get<0>(Instructions); TokenIndex += 2) {
+        std::cout << tokens[TokenIndex] << " , " << tokens[TokenIndex + 1] << "\n";
+        //if the value starts with a '&' we are going to stem it and search for the stemmed symbol.
+        if (tokens[TokenIndex + 1].at(0) == '&') {
+            tokens[TokenIndex + 1].erase(0, 1);
+            try {
+                auto value = DataAddressMap.at(tokens[TokenIndex + 1]);
+                DataAddressMap.emplace(tokens[TokenIndex], PRESENT_ADDRESS);
+                MachineData.emplace_back(value);
+            } catch (std::out_of_range& e) {
+                std::cerr << "Symbol : " << tokens[TokenIndex + 1] << ", is not found in the present scope to indirectly address, \n please note you need to have the variable declared before referencing it\n" << e.what() << std::endl;
+                return -1;
+            }
+        } else {
+            DataAddressMap.emplace(tokens[TokenIndex], PRESENT_ADDRESS);
+            MachineData.emplace_back(std::stoi(tokens[TokenIndex + 1]));
+        }
+        PRESENT_ADDRESS += 1;
+    }
+
+    for (auto i : tokens) {
+        std::cout << i << "\n";
+    }
+
+    for (const auto& i : DataAddressMap) {
+        OutputFile <<  i.first << " " << i.second << "\n";
+    }
+
+    for (auto i : MachineData) {
+        OutputFile << i << "\n";
+    }
+
 
     OutputFile.close();
     return 1;
