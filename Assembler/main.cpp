@@ -193,8 +193,20 @@ const std::unordered_map<std::string, char> SECOND_BIT_MAP = {
 };
 
 //we are going to leave the first 256 words free, 'cause we may need to write a bootloader or some shit.
-unsigned int PRESENT_ADDRESS = 0x101;
-unsigned int DATA_START_ADDRESS = 0x0;//need to change this while running based on the amount of instructions.
+unsigned short PRESENT_ADDRESS = 0x102;
+unsigned short DATA_START_ADDRESS = 0x0;//need to change this while running based on the amount of instructions.
+
+std::string short_to_nibble(unsigned short number) {
+    std::ostringstream four_nibbles;
+    four_nibbles << std::setw(4) << std::setfill('0') << std::hex << number;
+    return four_nibbles.str();
+}
+
+std::string short_to_nibble_three(unsigned short number) {
+    std::ostringstream four_nibbles;
+    four_nibbles << std::setw(3) << std::setfill('0') << std::hex << number;
+    return four_nibbles.str();
+}
 
 int main(int argc, char* argv[]) {
 
@@ -231,8 +243,6 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    std::cout << "Saving at : " << output_file_name << "\n";
-
     //Creating the output file
     std::ofstream OutputFile(output_file_name, std::ios::binary | std::ios::out);
     if (!OutputFile.is_open()) {
@@ -262,22 +272,18 @@ int main(int argc, char* argv[]) {
 
     ///Process of assembling :
     ///First we are going to iterate over the data and create a symbol tree for it.
-    ///we do not know how many instructions will be present, so we need to store instructions after storing the data.
-    ///at 0x100 we are going to store the address from which the instructions are starting which we are going to jump to indirectly from the bootstrap.
+    /// we do not know how many instructions will be present, so we need to store instructions after storing the data.
+    ///at 0x101 we are going to store the address from which the instructions are starting which we are going to jump to indirectly from the bootstrap.
     ///the status bit for the jump will be set in the boot strap.
 
     //Start assembling!
     //positions of the 'data:' and 'instructions:'
-    std::tuple<unsigned int , unsigned int> Data, Instructions;
+    std::tuple<unsigned short , unsigned short> Data, Instructions;
     //positions of other subroutines (where it starts and where it ends).
-    std::vector<std::tuple<std::string, unsigned int, unsigned int>> Subroutines;
+    std::vector<std::tuple<std::string, unsigned short, unsigned short>> Subroutines;
     int index1 = 0;
     for (auto const& token : tokens) {
-        if (tokens.at(0) == ";") {//if it is a comment we are going to continue over till we find out a new line character.
-            while (token != "\n") {
-                index1++;
-            }
-        } else if (token == ".data") {
+        if (token == ".data") {
             Data = std::make_tuple(index1, 0);
         } else if (token == ".instructions") {
             Instructions = std::make_tuple(index1, 0);
@@ -289,53 +295,117 @@ int main(int argc, char* argv[]) {
     //Setting the subroutines starting and ending positions.
     int SubroutineNumber = 0;
     index1 = 0;
-    for (auto const& token : tokens) {
-        if (token.at(0) == '.') {
+    for (auto& token : tokens) {
+        if (token.at(0) == '_') {
+            token.erase(0, 1);
             Subroutines.emplace_back(token, index1, 0);
-            if (index1 != 0) {
+            if (SubroutineNumber != 0) {
                 Subroutines[SubroutineNumber-1] = std::make_tuple(std::get<0>(Subroutines[SubroutineNumber-1]), std::get<1>(Subroutines[SubroutineNumber-1]), index1);
+            } else {
+                Instructions = std::make_tuple(std::get<0>(Instructions), index1);
             }
             SubroutineNumber++;
         }
     }
 
     //Stores the variable name and the address at which it is stored.
-    std::unordered_map<std::string, unsigned int> DataAddressMap;
+    std::unordered_map<std::string, unsigned short> DataAddressMap;
     //Stores the data part of the code in a sequential order, which is later used to write into the output file.
-    std::vector<unsigned int> MachineData;
-    for (unsigned int TokenIndex = std::get<0>(Data) + 1; TokenIndex < std::get<0>(Instructions); TokenIndex += 2) {
-        std::cout << tokens[TokenIndex] << " , " << tokens[TokenIndex + 1] << "\n";
+    std::vector<std::string> MachineStringData;
+    for (unsigned short TokenIndex = std::get<0>(Data) + 1; TokenIndex < std::get<0>(Instructions); TokenIndex += 2) {
         //if the value starts with a '&' we are going to stem it and search for the stemmed symbol.
         if (tokens[TokenIndex + 1].at(0) == '&') {
             tokens[TokenIndex + 1].erase(0, 1);
             try {
                 auto value = DataAddressMap.at(tokens[TokenIndex + 1]);
                 DataAddressMap.emplace(tokens[TokenIndex], PRESENT_ADDRESS);
-                MachineData.emplace_back(value);
+                MachineStringData.emplace_back(short_to_nibble(value));
             } catch (std::out_of_range& e) {
-                std::cerr << "Symbol : " << tokens[TokenIndex + 1] << ", is not found in the present scope to indirectly address, \n please note you need to have the variable declared before referencing it\n" << e.what() << std::endl;
+                std::cerr << "Symbol '" << tokens[TokenIndex + 1] << "' is not found in the present scope to indirectly address, \n please note you need to have the variable declared before referencing it\n" << e.what() << std::endl;
                 return -1;
             }
         } else {
             DataAddressMap.emplace(tokens[TokenIndex], PRESENT_ADDRESS);
-            MachineData.emplace_back(std::stoi(tokens[TokenIndex + 1]));
+            auto value = std::stoi(tokens[TokenIndex + 1]);
+            if (value < -32768 || value > 32767) {
+                std::cerr << "The value : " << value << ", is too small or too big to be assigned" << " for the variable : '" << tokens[TokenIndex] << "' , values should be in the range : [0, 65,535]" << std::endl;
+                return -1;
+            }
+            MachineStringData.emplace_back(short_to_nibble(value));
         }
         PRESENT_ADDRESS += 1;
     }
 
-    for (auto i : tokens) {
-        std::cout << i << "\n";
+
+
+    //Here we are going to store the instructions in the sequence.
+    std::vector<std::string> MachineInstruction;
+    std::stringstream present;
+    for (unsigned short InstructionIndex = std::get<0>(Instructions)+1; InstructionIndex <= std::get<1>(Instructions);) {
+        std::string* Instruction = &tokens[InstructionIndex];
+        try {
+            char first_nibble = FIRST_BIT_MAP.at(*Instruction);
+            char second_nibble = SECOND_BIT_MAP.at(*Instruction);
+            if (second_nibble != '\0') {
+                present << first_nibble << second_nibble << "00";
+                MachineInstruction.emplace_back(present.str());
+                present.clear();
+                //because this does not have an address.
+                InstructionIndex += 1;
+            } else {
+                std::string* InstructionAddress = &tokens[InstructionIndex + 1];
+                try {
+                    std::string Address = short_to_nibble_three(DataAddressMap.at(*InstructionAddress));
+                    MachineInstruction.emplace_back(present.str());
+                    present.clear();
+                } catch(const std::out_of_range& err) {
+                    std::cout << "The variable name : '" << *InstructionAddress << "', is not found in the data section" << std::endl;
+                    return -1;
+                }
+                InstructionIndex += 2;
+            }
+        } catch (const std::out_of_range& e) {
+            std::cerr << "No instruction matching with the given instruction name : '" << *Instruction << std::endl;
+            return -1;
+        }
     }
 
+
+
+
+
+    unsigned short CURRENT_FILLER = 0x0;
+    //    for (auto i : tokens) {
+//        std::cout << i << "\n";
+//    }
+
+    ///Writing the bootloader to the output file.
+    for (unsigned short i = 0x0; i <= 0x100; i++) {
+        OutputFile << short_to_nibble(0) << " ";
+        if (i % 8 == 0 && i != 0) {
+            OutputFile << "\n";
+        }
+    }
+
+    ///Filling the remaining space till 0x100.
+
+
+    ///setting the address to jump at the first position at 0x101.
+
+
+    ///Writing the data from 0x101.
+
+
+    ///writing the instructions and subroutines.
     for (const auto& i : DataAddressMap) {
-        OutputFile <<  i.first << " " << i.second << "\n";
+        OutputFile <<  i.first << " " << short_to_nibble_three(i.second) << "\n";
     }
 
-    for (auto i : MachineData) {
+    for (auto i : MachineStringData) {
         OutputFile << i << "\n";
     }
 
-
+    std::cout << "Saving at : " << output_file_name << "\n";
     OutputFile.close();
     return 1;
 }
