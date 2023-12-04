@@ -109,15 +109,15 @@
 struct [[maybe_unused]] synthasm{};
 //*************************************************************
 
-//In the 7 instructions that require you to give the operand as an address or data,
-//  6 of them have two types of addressing modes(direct and indirect)
-//  1 of them has an immediate mode.
-enum AddressingMode {
-    DirectAddress,
-    IndirectAddress,
-    ImmediateAddress,
-    NoAddress,//for the stuff that does not need an operand.
-};
+////In the 7 instructions that require you to give the operand as an address or data,
+////  6 of them have two types of addressing modes(direct and indirect)
+////  1 of them has an immediate mode.
+//enum AddressingMode {
+//    DirectAddress,
+//    IndirectAddress,
+//    ImmediateAddress,
+//    NoAddress,//for the stuff that does not need an operand.
+//};
 
 //first 4 bits of the instruction in the memory
 const std::unordered_map<std::string, char> FIRST_BIT_MAP = {
@@ -145,6 +145,8 @@ const std::unordered_map<std::string, char> FIRST_BIT_MAP = {
         {"xor" , '0'},
         {"shr" , '0'},
         {"shl" , '0'},
+        {"hlt" , '0'},
+        {"ssi" , '0'},
 
         {"lfa" , '1'},{"lfa%" , '9'},
         {"str" , '2'},{"str%" , 'a'},
@@ -182,6 +184,9 @@ const std::unordered_map<std::string, char> SECOND_BIT_MAP = {
         {"shr" , 'a'},
         {"shl" , 'b'},
 
+        {"hlt" , 'f'},
+        {"ssi" , 'c'},
+
         //As these instructions do not have a second bit dedicated to the functionality.
         {"lfa" , '\0'},{"lfa%" , '\0'},
         {"str" , '\0'},{"str%" , '\0'},
@@ -193,8 +198,10 @@ const std::unordered_map<std::string, char> SECOND_BIT_MAP = {
 };
 
 //we are going to leave the first 256 words free, 'cause we may need to write a bootloader or some shit.
-unsigned short PRESENT_ADDRESS = 0x102;
+unsigned short PRESENT_ADDRESS = 0x101;
 unsigned short DATA_START_ADDRESS = 0x0;//need to change this while running based on the amount of instructions.
+unsigned short RAM_FORMAT_LENGTH = 8;
+unsigned short TRACKING_ADDRESS = 0X101;
 
 std::string short_to_nibble(unsigned short number) {
     std::ostringstream four_nibbles;
@@ -276,11 +283,18 @@ int main(int argc, char* argv[]) {
     ///at 0x101 we are going to store the address from which the instructions are starting which we are going to jump to indirectly from the bootstrap.
     ///the status bit for the jump will be set in the boot strap.
 
-    //Start assembling!
+
+    //****************************************************************
+    //START ASSEMBLING!
+    //****************************************************************
+
+    //NEED TO IMPROVE , NO NEED FOR TWO LOOPS.
+
+    std::stringstream OutputInOrder;
+
+
     //positions of the 'data:' and 'instructions:'
     std::tuple<unsigned short , unsigned short> Data, Instructions;
-    //positions of other subroutines (where it starts and where it ends).
-    std::vector<std::tuple<std::string, unsigned short, unsigned short>> Subroutines;
     int index1 = 0;
     for (auto const& token : tokens) {
         if (token == ".data") {
@@ -293,6 +307,10 @@ int main(int argc, char* argv[]) {
     }
     Instructions = std::make_tuple(std::get<0>(Instructions), index1);
     //Setting the subroutines starting and ending positions.
+    //stores <token_name, start_index, end_index>
+    std::vector<std::tuple<std::string, unsigned short, unsigned short>> Subroutines;
+    //stores the token name to its address map.
+    std::unordered_map<std::string, unsigned short> SubroutineMap;
     int SubroutineNumber = 0;
     index1 = 0;
     for (auto& token : tokens) {
@@ -301,18 +319,25 @@ int main(int argc, char* argv[]) {
             Subroutines.emplace_back(token, index1, 0);
             if (SubroutineNumber != 0) {
                 Subroutines[SubroutineNumber-1] = std::make_tuple(std::get<0>(Subroutines[SubroutineNumber-1]), std::get<1>(Subroutines[SubroutineNumber-1]), index1);
-            } else {
-                Instructions = std::make_tuple(std::get<0>(Instructions), index1);
             }
             SubroutineNumber++;
         }
+        index1++;
     }
 
+    unsigned short DataEnd;
+    if (Subroutines.empty()) {
+        DataEnd = std::get<0>(Instructions);
+    } else {
+        DataEnd = std::get<1>(Subroutines[0]);
+    }
+
+    //ASSEMBLING DATA
     //Stores the variable name and the address at which it is stored.
     std::unordered_map<std::string, unsigned short> DataAddressMap;
     //Stores the data part of the code in a sequential order, which is later used to write into the output file.
     std::vector<std::string> MachineStringData;
-    for (unsigned short TokenIndex = std::get<0>(Data) + 1; TokenIndex < std::get<0>(Instructions); TokenIndex += 2) {
+    for (unsigned short TokenIndex = std::get<0>(Data) + 1; TokenIndex < DataEnd; TokenIndex += 2) {
         //if the value starts with a '&' we are going to stem it and search for the stemmed symbol.
         if (tokens[TokenIndex + 1].at(0) == '&') {
             tokens[TokenIndex + 1].erase(0, 1);
@@ -335,31 +360,114 @@ int main(int argc, char* argv[]) {
         }
         PRESENT_ADDRESS += 1;
     }
+    //the last subroutine's ending index will not be set, so we need to set it.
+    if (!Subroutines.empty()) {
+        Subroutines[Subroutines.size()-1] = std::make_tuple(std::get<0>(Subroutines[Subroutines.size()-1]), std::get<1>(Subroutines[Subroutines.size()-1]), std::get<0>(Instructions));
+    }
 
+    ///Writing the bootloader to the output file.(still need to write the actual stuff , this is just filler).
+    for (unsigned short i = 0x0; i < 0x100; i++) {
+        if (i % RAM_FORMAT_LENGTH == 0) {
+            OutputInOrder << "\n";
+            OutputInOrder << "0x" << std::setw(3) << std::setfill('0') << std::hex << DATA_START_ADDRESS << ": ";
+            DATA_START_ADDRESS += RAM_FORMAT_LENGTH;
+        }
+        OutputInOrder << short_to_nibble(0) << " ";
+    }
+
+    OutputInOrder << "\n0x100: " << "ffff" << " ";
+
+    //PRESENT_ADDRESS++;
+    auto new_o = 0x101;
+    for (const auto& i : MachineStringData) {
+        OutputInOrder << i << " ";
+        if (new_o % RAM_FORMAT_LENGTH == 0) {
+            OutputInOrder << "\n";
+            OutputInOrder << "0x" << std::setw(4) << std::hex << new_o << ": ";
+        }
+        new_o++;
+    }
+
+
+    //ASSEMBLING_SUBROUTINES
+    std::unordered_map<std::string, unsigned short> SubroutineAddressMap;
+    for (int SubroutineNumberIndex = 0; SubroutineNumberIndex < Subroutines.size(); SubroutineNumberIndex++) {
+        auto Subroutine = Subroutines[SubroutineNumberIndex];
+        //address of this subroutine with one free word left at the beginning.
+        SubroutineAddressMap.emplace(std::get<0>(Subroutine), PRESENT_ADDRESS);
+        auto latest_return = PRESENT_ADDRESS;
+        if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
+            OutputInOrder << "\n";
+            OutputInOrder << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+        }
+        OutputInOrder << "0000 ";PRESENT_ADDRESS++;
+        for (unsigned short SubroutineInstructionAddress = std::get<1>(Subroutine)+1; SubroutineInstructionAddress < std::get<2>(Subroutine);) {
+            try {
+                if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
+                    OutputInOrder << "\n";
+                    OutputInOrder << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+                }
+                char first_hex = FIRST_BIT_MAP.at(tokens[SubroutineInstructionAddress]);
+                char second_hex = SECOND_BIT_MAP.at(tokens[SubroutineInstructionAddress]);
+                if (second_hex == '\0') {
+                    //for immediate addressing mode
+                    auto& instn = tokens[SubroutineInstructionAddress];
+                    if (instn == "lid" || instn == "lid%") {
+                        OutputInOrder << first_hex << short_to_nibble(std::stoi(tokens[SubroutineInstructionAddress+1])) << " ";
+                        SubroutineInstructionAddress += 2;
+                    } else if (instn == "lfa" || instn == "str" || instn == "lfa%" || instn == "str%" ) {
+                        OutputInOrder << first_hex << short_to_nibble_three(DataAddressMap.at(tokens[SubroutineInstructionAddress+1])) << " ";
+                        SubroutineInstructionAddress += 2;
+                    } else if (instn == "ret" || instn == "ret%") {
+                        OutputInOrder << first_hex << short_to_nibble_three(latest_return) << " ";
+                        SubroutineInstructionAddress++;
+                    } else {
+                        OutputInOrder << first_hex << short_to_nibble_three(SubroutineAddressMap.at(tokens[SubroutineInstructionAddress+1])) << " ";
+                        SubroutineInstructionAddress += 2;
+                    }
+                } else {
+                    OutputInOrder << first_hex << second_hex << "00 ";
+                    ++SubroutineInstructionAddress;
+                }
+            } catch (std::out_of_range& ree) {
+                std::cerr << "Don't know, what : '" << tokens[SubroutineInstructionAddress] << "' means!!";
+                return -1;
+            }
+            PRESENT_ADDRESS++;
+        }
+    }
 
 
     //Here we are going to store the instructions in the sequence.
-    std::vector<std::string> MachineInstruction;
-    std::stringstream present;
-    for (unsigned short InstructionIndex = std::get<0>(Instructions)+1; InstructionIndex <= std::get<1>(Instructions);) {
+    //ASSEMBLING_INSTRUCTIONS
+    //Instructions are always going to be the last part of the file.
+    for (unsigned short InstructionIndex = std::get<0>(Instructions)+1; InstructionIndex < tokens.size();) {
         std::string* Instruction = &tokens[InstructionIndex];
         try {
             char first_nibble = FIRST_BIT_MAP.at(*Instruction);
             char second_nibble = SECOND_BIT_MAP.at(*Instruction);
+            if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
+                OutputInOrder << "\n";
+                OutputInOrder << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+            }
             if (second_nibble != '\0') {
-                present << first_nibble << second_nibble << "00";
-                MachineInstruction.emplace_back(present.str());
-                present.clear();
+                OutputInOrder << first_nibble << second_nibble << "00 ";
                 //because this does not have an address.
                 InstructionIndex += 1;
-            } else {
-                std::string* InstructionAddress = &tokens[InstructionIndex + 1];
+            } else {//if the address is needed.
                 try {
-                    std::string Address = short_to_nibble_three(DataAddressMap.at(*InstructionAddress));
-                    MachineInstruction.emplace_back(present.str());
-                    present.clear();
+                    std::string* InstructionAddress = &tokens[InstructionIndex + 1];
+                    if (*Instruction == "lid" || *Instruction == "lid%") {
+                        OutputInOrder << first_nibble << std::setw(3) << std::hex << std::stoi(*InstructionAddress) << " ";
+                    } else if (*Instruction == "lfa" || *Instruction == "str" || *Instruction == "lfa%" || *Instruction == "str%") {
+                        OutputInOrder << first_nibble << DataAddressMap.at(*InstructionAddress) << " ";
+                    } else if (*Instruction == "ret" || *Instruction == "ret%") {///if return is used in the main instructions then we are
+                        OutputInOrder << first_nibble << short_to_nibble_three(std::stoi(*InstructionAddress)) << " ";
+                    } else {
+                        OutputInOrder << first_nibble << SubroutineAddressMap.at(*InstructionAddress) << " ";
+                    }
                 } catch(const std::out_of_range& err) {
-                    std::cout << "The variable name : '" << *InstructionAddress << "', is not found in the data section" << std::endl;
+                    std::cout << "The symbol : '" << tokens[InstructionIndex+1] << "', is not found in the scope" << std::endl;
                     return -1;
                 }
                 InstructionIndex += 2;
@@ -373,20 +481,6 @@ int main(int argc, char* argv[]) {
 
 
 
-
-    unsigned short CURRENT_FILLER = 0x0;
-    //    for (auto i : tokens) {
-//        std::cout << i << "\n";
-//    }
-
-    ///Writing the bootloader to the output file.
-    for (unsigned short i = 0x0; i <= 0x100; i++) {
-        OutputFile << short_to_nibble(0) << " ";
-        if (i % 8 == 0 && i != 0) {
-            OutputFile << "\n";
-        }
-    }
-
     ///Filling the remaining space till 0x100.
 
 
@@ -397,14 +491,8 @@ int main(int argc, char* argv[]) {
 
 
     ///writing the instructions and subroutines.
-    for (const auto& i : DataAddressMap) {
-        OutputFile <<  i.first << " " << short_to_nibble_three(i.second) << "\n";
-    }
 
-    for (auto i : MachineStringData) {
-        OutputFile << i << "\n";
-    }
-
+    OutputFile << OutputInOrder.str();
     std::cout << "Saving at : " << output_file_name << "\n";
     OutputFile.close();
     return 1;
