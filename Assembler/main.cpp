@@ -375,15 +375,14 @@ int main(int argc, char* argv[]) {
         OutputInOrder << short_to_nibble(0) << " ";
     }
 
-    OutputInOrder << "\n0x100: " << "ffff" << " ";
-
+    std::stringstream SubroutinesNInstructions;
     //PRESENT_ADDRESS++;
     auto new_o = 0x101;
     for (const auto& i : MachineStringData) {
-        OutputInOrder << i << " ";
+        SubroutinesNInstructions << i << " ";
         if (new_o % RAM_FORMAT_LENGTH == 0) {
-            OutputInOrder << "\n";
-            OutputInOrder << "0x" << std::setw(4) << std::hex << new_o << ": ";
+            SubroutinesNInstructions << "\n";
+            SubroutinesNInstructions << "0x" << std::setw(4) << std::hex << new_o << ": ";
         }
         new_o++;
     }
@@ -397,39 +396,45 @@ int main(int argc, char* argv[]) {
         SubroutineAddressMap.emplace(std::get<0>(Subroutine), PRESENT_ADDRESS);
         auto latest_return = PRESENT_ADDRESS;
         if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
-            OutputInOrder << "\n";
-            OutputInOrder << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+            SubroutinesNInstructions << "\n";
+            SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
         }
-        OutputInOrder << "0000 ";PRESENT_ADDRESS++;
-        for (unsigned short SubroutineInstructionAddress = std::get<1>(Subroutine)+1; SubroutineInstructionAddress < std::get<2>(Subroutine);) {
+        SubroutinesNInstructions << "0000 ";
+        PRESENT_ADDRESS++;
+        for (unsigned short SubroutineInstructionAddress = std::get<1>(Subroutine) + 1;
+             SubroutineInstructionAddress < std::get<2>(Subroutine);) {
             try {
                 if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
-                    OutputInOrder << "\n";
-                    OutputInOrder << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+                    SubroutinesNInstructions << "\n";
+                    SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
                 }
                 char first_hex = FIRST_BIT_MAP.at(tokens[SubroutineInstructionAddress]);
                 char second_hex = SECOND_BIT_MAP.at(tokens[SubroutineInstructionAddress]);
                 if (second_hex == '\0') {
                     //for immediate addressing mode
-                    auto& instn = tokens[SubroutineInstructionAddress];
+                    auto &instn = tokens[SubroutineInstructionAddress];
                     if (instn == "lid" || instn == "lid%") {
-                        OutputInOrder << first_hex << short_to_nibble(std::stoi(tokens[SubroutineInstructionAddress+1])) << " ";
+                        SubroutinesNInstructions << first_hex
+                                                 << short_to_nibble(std::stoi(tokens[SubroutineInstructionAddress + 1]))
+                                                 << " ";
                         SubroutineInstructionAddress += 2;
-                    } else if (instn == "lfa" || instn == "str" || instn == "lfa%" || instn == "str%" ) {
-                        OutputInOrder << first_hex << short_to_nibble_three(DataAddressMap.at(tokens[SubroutineInstructionAddress+1])) << " ";
+                    } else if (instn == "lfa" || instn == "str" || instn == "lfa%" || instn == "str%") {
+                        SubroutinesNInstructions << first_hex << short_to_nibble_three(
+                                DataAddressMap.at(tokens[SubroutineInstructionAddress + 1])) << " ";
                         SubroutineInstructionAddress += 2;
                     } else if (instn == "ret" || instn == "ret%") {
-                        OutputInOrder << first_hex << short_to_nibble_three(latest_return) << " ";
+                        SubroutinesNInstructions << first_hex << short_to_nibble_three(latest_return) << " ";
                         SubroutineInstructionAddress++;
                     } else {
-                        OutputInOrder << first_hex << short_to_nibble_three(SubroutineAddressMap.at(tokens[SubroutineInstructionAddress+1])) << " ";
+                        SubroutinesNInstructions << first_hex << short_to_nibble_three(
+                                SubroutineAddressMap.at(tokens[SubroutineInstructionAddress + 1])) << " ";
                         SubroutineInstructionAddress += 2;
                     }
                 } else {
-                    OutputInOrder << first_hex << second_hex << "00 ";
+                    SubroutinesNInstructions << first_hex << second_hex << "00 ";
                     ++SubroutineInstructionAddress;
                 }
-            } catch (std::out_of_range& ree) {
+            } catch (std::out_of_range &ree) {
                 std::cerr << "Don't know, what : '" << tokens[SubroutineInstructionAddress] << "' means!!";
                 return -1;
             }
@@ -437,6 +442,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    auto InstructionStart = PRESENT_ADDRESS;
 
     //Here we are going to store the instructions in the sequence.
     //ASSEMBLING_INSTRUCTIONS
@@ -447,25 +453,26 @@ int main(int argc, char* argv[]) {
             char first_nibble = FIRST_BIT_MAP.at(*Instruction);
             char second_nibble = SECOND_BIT_MAP.at(*Instruction);
             if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
-                OutputInOrder << "\n";
-                OutputInOrder << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+                SubroutinesNInstructions << "\n";
+                SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
             }
             if (second_nibble != '\0') {
-                OutputInOrder << first_nibble << second_nibble << "00 ";
+                SubroutinesNInstructions << first_nibble << second_nibble << "00 ";
                 //because this does not have an address.
                 InstructionIndex += 1;
             } else {//if the address is needed.
                 try {
                     std::string* InstructionAddress = &tokens[InstructionIndex + 1];
                     if (*Instruction == "lid" || *Instruction == "lid%") {
-                        OutputInOrder << first_nibble << std::setw(3) << std::hex << std::stoi(*InstructionAddress) << " ";
+                        SubroutinesNInstructions << first_nibble << std::setw(3) << std::hex << std::stoi(*InstructionAddress) << " ";
                     } else if (*Instruction == "lfa" || *Instruction == "str" || *Instruction == "lfa%" || *Instruction == "str%") {
-                        OutputInOrder << first_nibble << DataAddressMap.at(*InstructionAddress) << " ";
+                        SubroutinesNInstructions << first_nibble << DataAddressMap.at(*InstructionAddress) << " ";
                     } else if (*Instruction == "ret" || *Instruction == "ret%") {///if return is used in the main instructions then we are
-                        OutputInOrder << first_nibble << short_to_nibble_three(std::stoi(*InstructionAddress)) << " ";
+                        SubroutinesNInstructions << first_nibble << short_to_nibble_three(std::stoi(*InstructionAddress)) << " ";
                     } else {
-                        OutputInOrder << first_nibble << SubroutineAddressMap.at(*InstructionAddress) << " ";
+                        SubroutinesNInstructions << first_nibble << SubroutineAddressMap.at(*InstructionAddress) << " ";
                     }
+                    PRESENT_ADDRESS += 2;
                 } catch(const std::out_of_range& err) {
                     std::cout << "The symbol : '" << tokens[InstructionIndex+1] << "', is not found in the scope" << std::endl;
                     return -1;
@@ -478,20 +485,17 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    for (;PRESENT_ADDRESS <= 0xfff; PRESENT_ADDRESS++) {
+        if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
+            SubroutinesNInstructions << "\n";
+            SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+        }
+        SubroutinesNInstructions << std::setw(4) << std::hex << "0000 ";
+    }
 
 
-
-    ///Filling the remaining space till 0x100.
-
-
-    ///setting the address to jump at the first position at 0x101.
-
-
-    ///Writing the data from 0x101.
-
-
-    ///writing the instructions and subroutines.
-
+    OutputInOrder << "\n0x100: " << std::setw(4) << std::hex << InstructionStart << " ";
+    OutputInOrder << SubroutinesNInstructions.str();
     OutputFile << OutputInOrder.str();
     std::cout << "Saving at : " << output_file_name << "\n";
     OutputFile.close();
