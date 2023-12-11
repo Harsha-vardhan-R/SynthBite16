@@ -1,18 +1,20 @@
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 SynthBite16 - A 16 bit computer with micro-programmed control
-Design, implementation and documentations by 'HarshaVardhan Rapeti'
+Design, implementation and documentation by 'HarshaVardhan Rapeti'
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
------------------------------------------
+
+********************************************************
 The design mainly focuses on : 
 
-1 -> FLEXIBILITY - Leftover microinstructions can be modified by the user to create their custom instructions.
-2 -> INSTRUCTION SET COMPLETENESS - All basic instructions that are required for a basic computer will be implemented
-3 -> COOL EXTRA INSTRUCTIONS - Instructions for calculating some video game related calculations.
-	- for example : Inverse of the number in AC, Square root etc...
-4 -> STACK!!! - we can perform operations on the stack(MAX_SIZE=8)
-------------------------------------------
+1 -> INSTRUCTION SET COMPLETENESS - A total of 39 instructions are currently present which pretty much cover up most of all the mandetory and some extra instructions which make programming in hasm extremely easy and comfortable.
+2 -> FLEXIBILITY - Leftover microinstructions can be modified** by the user to create their custom instructions.
+3 -> STACK!!! - we can perform operations on the stack(MAX_SIZE=8)
+********************************************************
+**the user need to modify the mapper circuit and write the ROM for the specific instruction.
+
+
 
 INSTRUCTION FORMAT
 ------------------
@@ -36,87 +38,81 @@ General Instruction format:
 
 
 
-
-REGISTERS AND THEIR USES
 ------------------------
- 
-Name	Size(bits)	FullForm		Use
+REGISTERS AND THEIR USES
+-------------------------------------------------------------------------------------------------------------
+Name Size	FullForm		  Use
 -------------------------------------------------------------------------------------------------------------
 +++++
-AC	16		ACCUMULATOR		STORES THE CURRENT DATA WE ARE WORKING WITH.
-PC	12		PROGRAM COUNTER		STORES THE ADDRESS OF THE NEXT INSTRUCTION TO BE EXECUTED.
-DR 	16		DATA REGISTER		STORES THE LOADED OPERAND(VALUE AT ADDRESS WILL BE THE OPERAND).
+AC	16		ACCUMULATOR		        STORES THE CURRENT DATA WE ARE WORKING WITH.
+PC	12		PROGRAM COUNTER		    STORES THE ADDRESS OF THE NEXT INSTRUCTION TO BE EXECUTED.
+DR 	16		DATA REGISTER		      STORES THE LOADED OPERAND(VALUE AT ADDRESS WILL BE THE OPERAND).
 IR	16		INSTRUCTION REGISTER	STORES THE CURRENT FULL INSTRUCTION WORD(TO BE DECODED AND EXECUTED).
-AR	12		ADDRESS REGISTER	STORES THE ADDRESS FROM 'PC'(TYPICALLY), CAN STORE ANY ADDRESS. 
-CR	3		COMPARISION REGISTER	STORES THE RESULTS FROM A 'CMP' INSTRUCTION.
-TR	16		TEMPORARY REGISTER	STORES TEMPERARY ADDRESSES OR DATA.
+AR	12		ADDRESS REGISTER	    STORES THE ADDRESS FROM 'PC'(TYPICALLY), CAN STORE ANY ADDRESS.
+CR	3	  	COMPARISION REGISTER	STORES THE RESULTS FROM A 'CMP' INSTRUCTION.
+TR	16		TEMPORARY REGISTER	  STORES TEMPORARY ADDRESSES OR DATA.(MOSTLY USED TO STORE THE DATA FROM ONE REGSTER TO ANOTHER DURING MICRO-OPERATIONS IN THE SAME MICRO-INSTRUCTION)
 +++++
-INPR	8		INPUT REGISTER		STORES AN INPUT(CHAR) FROM AN EXTERNAL DEVICE.
-OUTR	8		OUTPUT REGISTER		STORES THE OUTPUT CHAR.
+INPR	8		INPUT REGISTER		    STORES AN INPUT(CHAR) FROM AN EXTERNAL DEVICE.
+OUTR	16	OUTPUT REGISTER		    STORES THE OUTPUT DATA.
 +++++
-SP	12		STACK POINTER		STORES THE TOP OF THE INSTRUCTION STACK.
+SP	3		  STACK POINTER		      STORES THE 3-BIT ADDRESS OF THE PRESENT TOP OF THE INSTRUCTION STACK.
 +++++
 CAR	10		CONTROL ADDRESS REGISTER	THIS IS THE MAPPED VALUE OF THE INPUT DECODED INSTRUCTION, THE MICRO INSTRUCTIONS AT THIS POSITIONS WILL BE EXECUTED.
-CDR	24		CONTROL DATA REGISTER	        STORES THE CONTROL WORD, WILL FEEDBACK TO THE CONTROL SEQUENCER.
+CDR	24		CONTROL DATA REGISTER	STORES THE CONTROL WORD, WILL FEEDBACK TO THE CONTROL SEQUENCER.
 +++++
+===============================================================================================================
 
 
-
-STATUS BITS AND THEIR USES
 --------------------------
-
+STATUS BITS AND THEIR USES
+---------------------------------------------------------------------------------------------------------------
 Name	FullForm		Use
 ---------------------------------------------------------------------------------------------------------------
-E	OVERFLOW(TYPICALY)	CAN SEE THE OVERFLOW WHILE PERFORMING ARTHIMETIC ON AC USING ALU.
-
-IEN	INTERRUPT ENABLE	WILL DECIDE IF INTERRUPT CAN OCCUR OR NOT(IF 0 INTERRUPT HAS TO WAIT FOR NEXT INSTRUCTION...).
-R	INTERRUPT FLIP-FLOP	TELLS THE CPU TO SERVICE THE INTERRUPT.
-
+++++
+E	OVERFLOW(TYPICALY)	CAN SEE THE OVERFLOW WHILE PERFORMING ARTHIMETIC ON AC USING ALU.(THIS STORES THE C_OUT FROM ADDERS, SUBTRACTORS ETC...)
+++++
+IEN	INTERRUPT ENABLE	WILL DECIDE IF INTERRUPT CAN OCCUR OR NOT(IF 0 INTERRUPT HAS TO WAIT FOR NEXT INSTRUCTION...)(IF CAN SET THE VALUE OF "R" TO 1).
+R	INTERRUPT FLIP-FLOP	TELLS THE CPU TO SERVICE THE INTERRUPT.(WILL BE SET TO ZERO ONCE THE INTERRUPT IS DONE)
+++++
 FGI	INPUT FLAG		WILL TELL YOU IF YOU NEED TO DO AN INTERRUPT AND DO SOMETHING WITH THE INPUT.
-FGO 	OUTPUT FLAG		WILL TELL YOU IF SOME DEVICE IS WAITING FOR AN OUTPUT.
-
-CSB	COMPARATOR STATUS BIT	A SINGLE BIT THAT DECIDES IF THE JUMP CONDITIONALLY IS GOING TO HAPPEN OR NOT.
-
-
-
-
+++++
+CSB	COMPARATOR STATUS BIT	A SINGLE BIT THAT DECIDES IF THE JUMP CONDITIONALLY IS GOING TO HAPPEN OR NOT.(SET BY INSTRUCTIONS LIKE "CSL", "CSG" ETC..)
+++++
+===============================================================================================================
 
 
 VIRTUAL STATUS BITS AND THEIR USES
 ----------------------------------
 --Not extra registers, part of an existing register, but convey something more than the rest of the bits.
-
-
+----------------------------------------------------------------------------------------------------------------
 Position	Use
 ----------------------------------------------------------------------------------------------------------------
-AC(15)		SIGN OF THE NUMBER IF THERE IS ONE IN THE ACCUMULATOR
-IE(15)		DIRECT AND INDIRECT ADDRESSING BIT
-
-
-
+IE(15)		DIRECT AND INDIRECT ADDRESSING BIT.
+================================================================================================================
 
 
 C.I.S.C - COMPLEX INSTRUCTION SET COMPUTER
 
-HOW THIS WORKS(HOW ARE INSTRUCTIONS EXECUTED)
+HOW THE PROGRAM IS EXECUTED.
 =============================================
 
 1 -> FIRST, PROGRAMMER IS GOING TO WRITE THE PROGRAM IN THE FORM OF VALID INSTRUCTIONS.
 2 -> COMPUTER STARTS EXECUTING INSTRUCTIONS STARTING FROM A PREDEFINED ADDRESS.
 3 -> WHEN AN INSTRUCTION IS FED INTO THE CONTROL MAPPER.
-	- THE 16 BIT INSTRUCTION IS MAPPED TO A 10 BIT ADDRESS IN THE CONTROL MEMORY.
-	- THE CONRTOL SEQUENCER IS THE FIRST THING OUR 10 MAPPED BITS ARE GOING TO SEE, THE CONTROL SEQUENCER DECIDES WHAT TO DO AFTER THIS : 
+	- THE 16 BIT INSTRUCTION IS MAPPED TO A 8 BIT ADDRESS IN THE CONTROL MEMORY.
+	- THE CONRTOL SEQUENCER IS THE FIRST THING OUR 8 MAPPED BITS ARE GOING TO SEE, THE CONTROL SEQUENCER DECIDES WHAT TO DO AFTER THIS : 
 		- IF THE FEEDBACK FROM THE CONTROL DATA REGISTER IS TELLING TO TAKE THE NEXT INSTRUCTION
 			-THE PRESENT INSTRUCTION IS TAKEN IN AND THEN PUT INTO THE CONTROL REGISTER,
-			-THE MICROINSTRUCTIONS CAN TAKE DIFFERENT CLOCK CYCLES TO EXECUTE.
-			-SO THE END OF THE MICROINSTRUCTION WILL CONTAIN RELATED TO IT(MORE DETAILES WILL BE GIVEN LATER)
+			-DIFFERENT MICROINSTRUCTIONS CAN TAKE DIFFERENT CLOCK CYCLES TO EXECUTE.
+			-THE LAST 2 BITS OF THE MICROOPERATION TELLS THE SEQUENCER WHAT TO DO IN THE NEXT CLOCK CYCLE.
 			-BASED ON THE END OF THE MICRO-INSTRUCTION, THE CONTROL SEQUENCER WILL DECIDE WHAT EXACTLY TO DO NEXT,
 				-ANOTHER MICROINSTRUCTION ETC...
+    - OR IT LOADES THE INSTRUCTION AT PC AS THE NEXT INSTRUCTION AND THIS PROCESS WILL BE REPEATED UNTIL THE EXECUTION HALTS.
 4 -> THIS PROCESS IS CONTINUED FROM 1.
 
-=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-||| INSTRUCTIONS
-=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+INSTRUCTIONS
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 
 -INSTRUCTIONS : (OPERAND IS THE VALUE WHICH IS AT THE ADDRESS IN THE INSTRUCTION())
 
@@ -125,10 +121,10 @@ HOW THIS WORKS(HOW ARE INSTRUCTIONS EXECUTED)
 			=> 1 X X X | 9 X X X -> LFA -> LOAD       -> LOAD THE VALUE FROM THE ADDRESS INTO DR.
 			=> 2 X X X | A X X X -> STR -> STORE      -> STORES THE PRESENT VALUE OF AC IN THE OPERAND ADDRESS.
 			=> 3 X X X | B X X X -> JMP -> JUMP_COND  -> JUMP CONDITIONALLY TO THE GIVEN ADDRESS.
-			=> 4 X X X | C X X X -> CAL -> CALL	  -> CALL A SUBROUTINE.
-			=> 5 X X X | D X X X -> RET -> RETURN	  -> RETURN FROM A SUBROUTINE.	
+			=> 4 X X X | C X X X -> CAL -> CALL	      -> CALL A SUBROUTINE.
+			=> 5 X X X | D X X X -> RET -> RETURN	    -> RETURN FROM A SUBROUTINE.	
 			=> 6 X X X | E X X X -> LDI -> LOAD IMM   -> LOAD IMMEDIATE VALUE INTO THE AC, (THE HIGHEST 4 BITS WILL BE FILLED WITH 0).
-			=> 7 X X X | F X X X -> SWP -> SWAP	  -> SWAPS THE VALUES OF AC AND THE OPERAND.
+			=> 7 X X X | F X X X -> SWP -> SWAP	      -> SWAPS THE VALUES OF AC AND THE OPERAND.
 			
 
 	-OPERAND IS NOT REQUIRED : INSTRUCTION FORMAT 0-X-X-X OR 8-X-X-X
@@ -136,60 +132,67 @@ HOW THIS WORKS(HOW ARE INSTRUCTIONS EXECUTED)
 		-INSTRUCTIONS MANIPULATING DATA : 
 
 			-INSTRUCTIONS ON THE STACK : 
-				=> 8 0 X X -> PSH  -> PUSH ONTO THE STACK		    -> (STACK TOP <- DR, SP <- SP + 1)
-				=> 8 1 X X -> POP  -> POP FROM THE STACK		    -> POP THE VALUE FROM THE STACK TOP AND PLACE IT IN THE OUT BUFFER REGISTER.
+				=> 8 0 X X -> PSH  -> PUSH ONTO THE STACK		                -> (STACK TOP <- DR, SP <- SP + 1)
+				=> 8 1 X X -> POP  -> POP FROM THE STACK		                -> POP THE VALUE FROM THE STACK TOP AND PLACE IT IN THE OUT BUFFER REGISTER.
 				=> 8 2 X X -> ADS  -> ADD THE TOP TWO ELEMENTS IN THE STACK -> (STACK TOP <- STACK TOP + STACK TOP AFTER A POP)
-				=> 8 3 X X -> SDS  -> SUBTRACT ON THE STACK		    -> (STACK TOP <- STACK TOP - STACK TOP AFTER A POP)
-				=> 8 4 X X -> MDS  -> MULTIPLY ON THE STACK		    -> (STACK TOP <- STACK TOP * STACK TOP AFTER A POP)
-				=> 8 5 X X -> DDS  -> DIVIDE ON THE STACK		    -> (STACK TOP <- STACK TOP / STACK TOP AFTER A POP)
+				=> 8 3 X X -> SDS  -> SUBTRACT ON THE STACK		              -> (STACK TOP <- STACK TOP - STACK TOP AFTER A POP)
+				=> 8 4 X X -> MDS  -> MULTIPLY ON THE STACK		              -> (STACK TOP <- STACK TOP * STACK TOP AFTER A POP)
+				=> 8 5 X X -> DDS  -> DIVIDE ON THE STACK		                -> (STACK TOP <- STACK TOP / STACK TOP AFTER A POP)
+        => 8 6 X X -> LFS  -> LOAD FROM STACK TOP                   -> (AC <- STACK TOP)
 
 			-INSTRUCTIONS ON ACCUMULATOR AND DATA REGISTER : 
-				=> 0 0 X X -> LFD  -> LOAD FROM DR(AC <- DR) 		-> LOAD THE VALUE OF THE DATA REGISTER INTO AC.
-				=> 0 1 X X -> LDC  -> LOAD DATA COMPLIMENT(AC <- ~DR)	-> LOAD THE COMPLIMENT OF THE VALUE OF DR INTO AC.
-				=> 0 2 X X -> ADD  -> ADD(DR + AC) 			-> ADD THE VALUE OF DR AND AC AND STORE IT IN AC.
-				=> 0 3 X X -> MUL  -> MULTIPLY(DR * AC) 		-> MULTIPLY THE VALUE OF DR WITH AC.
-				=> 0 4 X X -> SUB  -> SUBTRACT(AC <- DR + (~AC + 1))	-> SUBTRACT AC FROM DR.
+				=> 0 0 X X -> LFD  -> LOAD FROM DR(AC <- DR) 		            -> LOAD THE VALUE OF THE DATA REGISTER INTO AC.
+				=> 0 1 X X -> LDC  -> LOAD DATA COMPLIMENT(AC <- ~DR)	      -> LOAD THE COMPLIMENT OF THE VALUE OF DR INTO AC.
+				=> 0 2 X X -> ADD  -> ADD(DR + AC) 			                    -> ADD THE VALUE OF DR AND AC AND STORE IT IN AC.
+				=> 0 3 X X -> MUL  -> MULTIPLY(DR * AC) 		                -> MULTIPLY THE VALUE OF DR WITH AC.
+				=> 0 4 X X -> SUB  -> SUBTRACT(AC <- DR + (~AC + 1))	      -> SUBTRACT AC FROM DR.
 				=> 0 5 X X -> DIV  -> DIVIDE(AC <- REMAINDER OF AC/DR, QR <- AC/DR) -> DIVIDE AC WITH DR.
-				=> 0 6 X X -> CMP  -> COMPARE THE VALUES OF DR AND AC   -> WILL SET THREE BITS BASED ON THE COMPARISION(SMALLER, EQUAL, GREATER).
-				=> 0 7 X X -> AND  -> BITWISE AND(AC <- AC && DR)   	-> BITWISE AND WITH AC.
-				=> 0 8 X X -> BOR  -> BITWISE OR(AC <- AC || DR)	-> BITWISE OR WITH AC.
-				=> 0 9 X X -> XOR  -> BITWISE XOR(AC <- AC ^ DR) 	-> BITWISE XOR WITH AC.
-				=> 0 A X X -> SHR  -> SHIFT AC TO RIGHT 		-> SHIFT THE AC VALUE TO THE RIGHT.
-				=> 0 B X X -> SHL  -> SHIFT AC TO THE LEFT		-> SHIFT THE AC VALUE TO THE LEFT.
-			
-			-INSTRUCTIONS TO SET THE COMPARISION BITS : 
-				=> 8 8 X X -> CSO ->  COMPARISION STATUS BIT <- '1' (YOU WANT TO USE THIS WHEN THERE IS NO CONDITION TO JUMP)(COMPARE STATUS SET ONE)
-				=> 8 9 X X -> CSL ->  COMPARISION STATUS BIT <- COMPARE REGISTER(LESSER)(COMPARE SET LESSER)
-				=> 8 A X X -> CSE ->  COMPARISION STATUS BIT <- COMPARE REGISTER(EQUAL)
-				=> 8 B X X -> CSG ->  COMPARISION STATUS BIT <- COMPARE REGISTER(GREATER)
+				=> 0 6 X X -> CMP  -> COMPARE THE VALUES OF DR AND AC       -> WILL SET THREE BITS BASED ON THE COMPARISION(SMALLER, EQUAL, GREATER).
+				=> 0 7 X X -> AND  -> BITWISE AND(AC <- AC && DR)   	      -> BITWISE AND WITH AC.
+				=> 0 8 X X -> BOR  -> BITWISE OR(AC <- AC || DR)	          -> BITWISE OR WITH AC.
+				=> 0 9 X X -> XOR  -> BITWISE XOR(AC <- AC ^ DR) 	          -> BITWISE XOR WITH AC.
+				=> 0 A X X -> SHR  -> SHIFT AC TO RIGHT 		                -> SHIFT THE AC VALUE TO THE RIGHT.
+				=> 0 B X X -> SHL  -> SHIFT AC TO THE LEFT		              -> SHIFT THE AC VALUE TO THE LEFT.
+			  => 0 D X X -> RND  -> RANDOM NUMBER IN AC                   -> LOAD A RANDOM NUMBER IN AC.
+        => 0 E X X -> IBO  -> INCREMENT BY ONE                      -> AC <= AC+1
 
-			-COOL STUFF : 
-				=> 0 D X X -> 
-				=> 0 E X X -> 
+			-INSTRUCTIONS TO SET THE COMPARISION BITS : 
+        => 8 7 X X -> CSC ->  COMPARISION STATUS BIT -> COMPARE REGISTER CARRY(SETS THE COMPARE REGISTER THE PRESENT VALUE OF THE CARRY FLIP FLOP)
+				=> 8 8 X X -> CSO ->  COMPARISION STATUS BIT -> COMPARE REGISTER ONE(SETS THE COMPARE ONE WITHOUT CHECKING ANY OTHER STUFF)
+				=> 8 9 X X -> CSL ->  COMPARISION STATUS BIT -> COMPARE REGISTER(LESSER)(COMPARE SET LESSER)
+				=> 8 A X X -> CSE ->  COMPARISION STATUS BIT -> COMPARE REGISTER(EQUAL)
+				=> 8 B X X -> CSG ->  COMPARISION STATUS BIT -> COMPARE REGISTER(GREATER)
 
 			-EXTRA
 				=> 0 C X X -> SSI -> SET SERIAL INPUT TO 1		-> SET THE SERIAL INPUTS FOR THE SHIFT OPERATIONS.(IT WILL BE 0 BY DEFAULT EVERY TIME)
-				=> 0 F X X -> HLT -> PROGRAM HALT 			-> HALT THE EXECUTIION. 
+				=> 0 F X X -> HLT -> PROGRAM HALT 			      -> HALT THE EXECUTIION. 
 
 		-INSTRUCTIONS RELATED I/O : 
 			=> 8 C X X -> LOAD THE VALUE FROM INPUT REGISTER INTO THE DATA REGISTER.
 			=> 8 D X X -> PLACE THE VALUE OF AC IN THE OUPUT REGISTER. 
+      => 8 E X X -> SET THE INTERRUPT ENABLE ON.
+      => 8 F X X -> SET THE INTERRUPT ENABLE OF.
 
 
-
-* LEFT OVER INSTRUCTION ADDRESSES IN 2 NIBBLE OP-CODES. CAN HAVE WAY MORE THAN THIS, BUT IT WILL OVERCOMPLICATE THE SYSTEM.
-- 8 E X X 
-- 8 F X X 
-
+* CAN HAVE WAY MORE INSTRUCTIONS THAN THIS, BUT IT WILL OVERCOMPLICATE THE SYSTEM.
 **here the terms microoperations, microinstructions and instructions are loosely used , please understand the referred term based on the context.
 	
+
+
+++++++++++++++++++++++
 MAIN COMPUTER LOOP
 ++++++++++++++++++++++
 
+BOOTSTRAP -> LOAD -> THE STARTING POINT OG THE PROGRAM IS GOING TO BE THE ADDRESS AT WHICH THE INSTRUCTIONS ARE GOING TO START(.instructions)
+we are going to jump to the starting point of the instructions indirectly from the end of the bootstrap, which will put the computer in the user written instruction loop.
+The instructions are going to be performed sequentially till they encounter "jmp", "cll" or "hlt" (or some other interrupt)
+This is going to be repeated, thats it.
 
-BOOTSTRAP -> LOAD -> THE STARTING POINT OG THE PROGRAM IS GOING TO BE THE ADDRESS AT WHICH THE INSTRUCTIONS ARE GOING TO START(.instructions)	
-
++++++++++++++++++++++++++++++
 MEMORY LAYOUT OF THE RAM
++++++++++++++++++++++++++++++
+===============================================================================
+===============================================================================
 --BOOTSTRAP--(0X000 -> 0X0FF)(FOLLOWING EMPTY SPACE WILL BE FILLED WITH ZEROS)
 --INDIRECT JUMP ADDRESS-- -> (0X100) (STORES THE INSTRUCTION STARTING ENTRY POINT)
 --DATA-- (0X101 -> 0XHHH) -> (VARIABLE SPACE DEPENDING ON THE PRESENT PROGRAM)
@@ -199,7 +202,7 @@ MEMORY LAYOUT OF THE RAM
 			--THE LENGTH OF THE REMAINING WILL BE DEPENDING ON THE NUMBER OF INSTRUCTIONS IN THE SUBROUTINE
 			--GENERALLY ENDS WITH A 'RET' OR A 'HLT'
 	)
---INSTRUCTIONS-- ('NO' FREE WORD)
+--INSTRUCTIONS-- ('NO' FREE WORD AT THE BEGINNING)
 CONTINUOUSLY STORE THE INSTRUCTIONS TILL THEY END
 -----
 -----
@@ -207,6 +210,64 @@ CONTINUOUSLY STORE THE INSTRUCTIONS TILL THEY END
 -----
 -----
 BEFORE THE END (0XIII -> 0XFFF) (STORE THE MAIN INTERRUPTS, LIKE PROGRAM KILL AND SO ON)
+=================================================================================
+=================================================================================
+
+
+
+++++
+ROM OUTPUTS AND THE SIGNIFICANCE OF EACH BIT(STORED IN CONTROL DATA REGISTER, SHOWN IN THE 'PRESENT CONTROL' LED'S IN THE LOGISIM CIRCUIT)
+
+        XXXX-XXXX-XXXX-X-X-XX-
+         ^    ^    ^   ^ ^ ^   ^
+         1    2    3   4 5 6   7
+
+1 => REGISTER TO PUT ON THE BUS
+2 => REGISTER TO LOAD FROM THE BUS
+3 => SELECT THE OUTPUT FROM THE ALU TO LOAD INTO AC
+4 => ENABLE THE ALU MULTIPLEXER(USED WHEN THE MIROINSTRUCTION TAKES MORE THAN ONE-CLOCK CYCLE)
+5 => SHIFT THE AC REGISTER TO THE LEFT
+6 => FIRST BIT IS TO LOAD THE INPUT INTO mAC PARALLELY, AND THE SECOND BIT IS FOR LEFT SHIFTING mAC.
+7 => 
+
+
+EACH INSTRUCTION, HOW IT IS INTERPRETTED, HOW TO USE IT, OTHER NON-USEFUL INFO FOR ANY USER(I do not think will use this :( , but anyways)
+---------------------------------------------------------------------------------
+
+
+
+1 -> LFA 
+  STANDS FOR LOAD FROM ADDRESS
+    CAN LOAD A WORD FROM THE ADDRESS DIRECTLY OR INDIRECTLY
+  FOR EXAMPLE :
+    ```
+    .data
+      a = 4;
+      b = &a;
+    ```
+  you can load 4 into the DATA REGISTER in two ways,
+    EITHER :
+      ```
+      lfa a;
+      ```
+    OR : 
+      ```
+      lfa% b;
+      ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

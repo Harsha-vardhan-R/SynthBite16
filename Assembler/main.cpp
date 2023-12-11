@@ -8,6 +8,7 @@
 
 
 /// usage : synthasm [input-file] [output-file-path]\n
+///\n This CLI is written in the
 ///
 ///\n This is going to be a command line interface which gets a txt file as an input this saves the final '.hasm' file in the given directory,
 ///\n If no directory is given then it is going to save it in the same directory as the input file.
@@ -75,33 +76,30 @@
 
 ///\n\n*************************************************************
 ///\nFORMAT IN WHICH THE CODE SHOULD BE PROVIDED :
-
-///\nall the data SHOULD be of a hex value in the form of '0xhhhh'and should have a value of 2 bytes.
-///\ndata:
-///\n    name 0xhhhh;
-///\n    name2 0xhhhh;
-///\n    :
-///\n    name3 &name2;        //this is going to store the address of name2 in the memory. for eg : \name2 :pointer should always be declared after the original declaration.
-///\n
-///\n
-///\ninstructions:
-///\n
-///\n
-///\n
-///\n
-///\n
-///\nsubroutine1:
-///\n
-///\n
-///\n
-///\n
-///\n
-///\n
-///\n
-///\n
-
-
-
+//.This a sample 'hasm' code which does nothing(like literally), but given to show how the code should be written.
+//.data:
+//a = 32000;
+//c = 5;
+//b = &c;
+//d = 4095;
+//name2 = 443;
+//ans = 0;
+//
+//_more:
+//ret;
+//
+//_ntng:
+//lfa c;
+//lfd;
+//lfa name2;
+//cmp;
+//cse;
+//jmp more;
+//ret;
+//
+//.instructions:
+//cal ntng;
+//hlt;
 
 
 //"v3.0 hex words addressed"
