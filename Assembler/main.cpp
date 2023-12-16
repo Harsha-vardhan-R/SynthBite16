@@ -16,63 +16,68 @@
 ///PLEASE NOTE THAT THIS ASSEMBLER DOESN'T GIVE A FLYING FUCK FOR TYPES OR VALUES OR VARIABLES,PLEASE LOOK AFTER THEM YOURSELF.
 ///
 ///
+///\n=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+///\nINSTRUCTIONS
+///\n=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+///\n
 ///\n-INSTRUCTIONS : (OPERAND IS THE VALUE WHICH IS AT THE ADDRESS IN THE INSTRUCTION())
 ///\n
-///\n-OPERAND IS REQUIRED :
-///\n-DIRECT AND INDIRECT ADDRESSING
-///\n=> 1 X X X | 9 X X X -> LFA -> LOAD       -> LOAD THE VALUE FROM THE ADDRESS INTO DR.
-///\n=> 2 X X X | A X X X -> STR -> STORE      -> STORES THE PRESENT VALUE OF AC IN THE OPERAND ADDRESS.
-///\n=> 3 X X X | B X X X -> JMP -> JUMP_COND  -> JUMP CONDITIONALLY TO THE GIVEN ADDRESS.
-///\n=> 4 X X X | C X X X -> CAL -> CALL	    -> CALL A SUBROUTINE.
-///\n=> 5 X X X | D X X X -> RET -> RETURN	    -> RETURN FROM A SUBROUTINE.
-///\n=> 6 X X X | E X X X -> LID -> LOAD IMM   -> LOAD IMMEDIATE VALUE INTO THE AC, (THE HIGHEST 4 BITS WILL BE FILLED WITH 0).(E X X X WILL FILL THE HIGHEST 12 BITS OF THE NUMBER)
-///\n=> 7 X X X | F X X X -> SWP -> SWAP	    -> SWAPS THE VALUES OF AC AND THE OPERAND.
+///\n	-OPERAND IS REQUIRED :
+///\n		-DIRECT AND INDIRECT ADDRESSING
+///\n			=> 1 X X X | 9 X X X -> LFA -> LOAD       -> LOAD THE VALUE FROM THE ADDRESS INTO DR.
+///\n			=> 2 X X X | A X X X -> STR -> STORE      -> STORES THE PRESENT VALUE OF AC IN THE OPERAND ADDRESS.
+///\n			=> 3 X X X | B X X X -> JMP -> JUMP_COND  -> JUMP CONDITIONALLY TO THE GIVEN ADDRESS.
+///\n			=> 4 X X X | C X X X -> CAL -> CALL	      -> CALL A SUBROUTINE.
+///\n			=> 5 X X X | D X X X -> RET -> RETURN	    -> RETURN FROM A SUBROUTINE.
+///\n			=> 6 X X X | E X X X -> LDI -> LOAD IMM   -> LOAD IMMEDIATE VALUE INTO THE AC, (THE HIGHEST 4 BITS WILL BE FILLED WITH 0).
+///\n			=> 7 X X X | F X X X -> SWP -> SWAP	      -> SWAPS THE VALUES OF AC AND THE OPERAND.
 ///\n
 ///\n
-///\n-OPERAND IS NOT REQUIRED : INSTRUCTION FORMAT 0-X-X-X OR 8-X-X-X
+///\n	-OPERAND IS NOT REQUIRED : INSTRUCTION FORMAT 0-X-X-X OR 8-X-X-X
 ///\n
-///\n-INSTRUCTIONS MANIPULATING DATA ://positions of the 'data:' and 'instructions:'
+///\n		-INSTRUCTIONS MANIPULATING DATA :
 ///\n
-///\n-INSTRUCTIONS ON THE STACK :
-///\n=> 8 0 X X -> PSH  -> PUSH ONTO THE STACK		        -> (STACK TOP <- DR, SP <- SP + 1)
-///\n=> 8 1 X X -> POP  -> POP FROM THE STACK		        -> POP THE VALUE FROM THE STACK TOP AND PLACE IT IN THE OUT BUFFER REGISTER.
-///\n=> 8 2 X X -> ADS  -> ADD THE TOP TWO ELEMENTS IN THE STACK -> (STACK TOP <- STACK TOP + STACK TOP AFTER A POP)
-///\n=> 8 3 X X -> SDS  -> SUBTRACT ON THE STACK		    -> (STACK TOP <- STACK TOP - STACK TOP AFTER A POP)
-///\n=> 8 4 X X -> MDS  -> MULTIPLY ON THE STACK		    -> (STACK TOP <- STACK TOP * STACK TOP AFTER A POP)
-///\n=> 8 5 X X -> DDS  -> DIVIDE ON THE STACK		        -> (STACK TOP <- STACK TOP / STACK TOP AFTER A POP)
+///\n			-INSTRUCTIONS ON THE STACK :
+///\n				=> 8 0 X X -> PSH  -> PUSH ONTO THE STACK		                -> (STACK TOP <- DR, SP <- SP + 1)
+///\n				=> 8 1 X X -> POP  -> POP FROM THE STACK		                -> POP THE VALUE FROM THE STACK TOP AND PLACE IT IN THE OUT BUFFER REGISTER.
+///\n				=> 8 2 X X -> ADS  -> ADD THE TOP TWO ELEMENTS IN THE STACK -> (STACK TOP <- STACK TOP + STACK TOP AFTER A POP)
+///\n				=> 8 3 X X -> SDS  -> SUBTRACT ON THE STACK		              -> (STACK TOP <- STACK TOP - STACK TOP AFTER A POP)
+///\n				=> 8 4 X X -> MDS  -> MULTIPLY ON THE STACK		              -> (STACK TOP <- STACK TOP * STACK TOP AFTER A POP)
+///\n				=> 8 5 X X -> DDS  -> DIVIDE ON THE STACK		                -> (STACK TOP <- STACK TOP / STACK TOP AFTER A POP)
+///\n      => 8 6 X X -> LFS  -> LOAD FROM STACK TOP                   -> (AC <- STACK TOP)
 ///\n
-///\n-INSTRUCTIONS ON ACCUMULATOR AND DATA REGISTER :
-///\n=> 0 0 X X -> LFD  -> LOAD FROM DR(AC <- DR) 		        -> LOAD THE VALUE OF THE DATA REGISTER INTO AC.
-///\n=> 0 1 X X -> LDC  -> LOAD DATA COMPLIMENT(AC <- ~DR)	    -> LOAD THE COMPLIMENT OF THE VALUE OF DR INTO AC.
-///\n=> 0 2 X X -> ADD  -> ADD(DR + AC) 			            -> ADD THE VALUE OF DR AND AC AND STORE IT IN AC.
-///\n=> 0 3 X X -> MUL  -> MULTIPLY(DR * AC) 		            -> MULTIPLY THE VALUE OF DR WITH AC.
-///\n=> 0 4 X X -> SUB  -> SUBTRACT(AC <- DR + (~AC + 1))	    -> SUBTRACT AC FROM DR.
-///\n=> 0 5 X X -> DIV  -> DIVIDE(AC <- REMAINDER OF AC/DR, QR <- AC/DR) -> DIVIDE AC WITH DR.
-///\n=> 0 6 X X -> CMP  -> COMPARE THE VALUES OF DR AND AC      -> WILL SET THREE BITS BASED ON THE COMPARISON(SMALLER, EQUAL, GREATER).
-///\n=> 0 7 X X -> AND  -> BITWISE AND(AC <- AC && DR)   	    -> BITWISE AND WITH AC.
-///\n=> 0 8 X X -> BOR  -> BITWISE OR(AC <- AC || DR)	        -> BITWISE OR WITH AC.
-///\n=> 0 9 X X -> XOR  -> BITWISE XOR(AC <- AC ^ DR) 	        -> BITWISE XOR WITH AC.
-///\n=> 0 A X X -> SHR  -> SHIFT AC TO RIGHT 		            -> SHIFT THE AC VALUE TO THE RIGHT.
-///\n=> 0 B X X -> SHL  -> SHIFT AC TO THE LEFT		            -> SHIFT THE AC VALUE TO THE LEFT.
+///\n			-INSTRUCTIONS ON ACCUMULATOR AND DATA REGISTER :
+///\n				=> 0 0 X X -> LFD  -> LOAD FROM DR(AC <- DR) 		            -> LOAD THE VALUE OF THE DATA REGISTER INTO AC.
+///\n				=> 0 1 X X -> LDC  -> LOAD DATA COMPLIMENT(AC <- ~DR)	      -> LOAD THE COMPLIMENT OF THE VALUE OF DR INTO AC.
+///\n				=> 0 2 X X -> ADD  -> ADD(DR + AC) 			                    -> ADD THE VALUE OF DR AND AC AND STORE IT IN AC.
+///\n				=> 0 3 X X -> MUL  -> MULTIPLY(DR * AC) 		                -> MULTIPLY THE VALUE OF DR WITH AC.
+///\n				=> 0 4 X X -> SUB  -> SUBTRACT(AC <- DR + (~AC + 1))	      -> SUBTRACT AC FROM DR.
+///\n				=> 0 5 X X -> DIV  -> DIVIDE(AC <- REMAINDER OF AC/DR, QR <- AC/DR) -> DIVIDE AC WITH DR.
+///\n				=> 0 6 X X -> CMP  -> COMPARE THE VALUES OF DR AND AC       -> WILL SET THREE BITS BASED ON THE COMPARISION(SMALLER, EQUAL, GREATER).
+///\n				=> 0 7 X X -> AND  -> BITWISE AND(AC <- AC && DR)   	      -> BITWISE AND WITH AC.
+///\n				=> 0 8 X X -> BOR  -> BITWISE OR(AC <- AC || DR)	          -> BITWISE OR WITH AC.
+///\n				=> 0 9 X X -> XOR  -> BITWISE XOR(AC <- AC ///\n DR) 	          -> BITWISE XOR WITH AC.
+///\n				=> 0 A X X -> SHR  -> SHIFT AC TO RIGHT 		                -> SHIFT THE AC VALUE TO THE RIGHT.
+///\n				=> 0 B X X -> SHL  -> SHIFT AC TO THE LEFT		              -> SHIFT THE AC VALUE TO THE LEFT.
+///\n			  => 0 D X X -> RND  -> RANDOM NUMBER IN AC                   -> LOAD A RANDOM NUMBER IN AC.
+///\n        => 0 E X X -> IBO  -> INCREMENT BY ONE                      -> AC <= AC+1
 ///\n
-///\n-INSTRUCTIONS TO SET THE COMPARISON BITS :
-///\n=> 8 8 X X -> CSO ->  COMPARISON STATUS BIT <- '1' (YOU WANT TO USE THIS WHEN THERE IS NO CONDITION TO JUMP)(COMPARE STATUS SET ONE)
-///\n=> 8 9 X X -> CSL ->  COMPARISON STATUS BIT <- COMPARE REGISTER(LESSER)(COMPARE SET LESSER)
-///\n=> 8 A X X -> CSE ->  COMPARISON STATUS BIT <- COMPARE REGISTER(EQUAL)
-///\n=> 8 B X X -> CSG ->  COMPARISON STATUS BIT <- COMPARE REGISTER(GREATER)
+///\n			-INSTRUCTIONS TO SET THE COMPARISON BITS :
+///\n      => 8 7 X X -> CSC ->  COMPARISON STATUS BIT -> COMPARE REGISTER CARRY(SETS THE COMPARE REGISTER THE PRESENT VALUE OF THE CARRY FLIP FLOP)
+///\n				=> 8 8 X X -> CSO ->  COMPARISON STATUS BIT -> COMPARE REGISTER ONE(SETS THE COMPARE ONE WITHOUT CHECKING ANY OTHER STUFF)
+///\n				=> 8 9 X X -> CSL ->  COMPARISON STATUS BIT -> COMPARE REGISTER(LESSER)(COMPARE SET LESSER)
+///\n				=> 8 A X X -> CSE ->  COMPARISON STATUS BIT -> COMPARE REGISTER(EQUAL)
+///\n				=> 8 B X X -> CSG ->  COMPARISON STATUS BIT -> COMPARE REGISTER(GREATER)
 ///\n
-///\n-COOL STUFF :
-///\n=> 0 D X X -> RND -> LOAD A RANDOM VALUE INTO THE ACCUMULATOR.
-///\n=> 0 E X X ->
+///\n			-EXTRA
+///\n				=> 0 C X X -> SSI -> SET SERIAL INPUT TO 1		-> SET THE SERIAL INPUTS FOR THE SHIFT OPERATIONS.(IT WILL BE 0 BY DEFAULT EVERY TIME)
+///\n				=> 0 F X X -> HLT -> PROGRAM HALT 			      -> HALT THE EXECUTION.
 ///\n
-///\n-EXTRA
-///\n=> 0 C X X -> SSI -> SET SERIAL INPUT TO 1		-> SET THE SERIAL INPUTS FOR THE SHIFT OPERATIONS.(IT WILL BE 0 BY DEFAULT EVERY TIME)
-///\n=> 0 F X X -> HLT -> PROGRAM HALT 			-> HALT THE EXECUTION.
-///\n
-///\n-INSTRUCTIONS RELATED I/O :
-///\n=> 8 C X X -> LOAD THE VALUE FROM INPUT REGISTER INTO THE DATA REGISTER.
-///\n=> 8 D X X -> PLACE THE VALUE OF AC IN THE OUTPUT REGISTER.
-
+///\n		-INSTRUCTIONS RELATED I/O :
+///\n			=> 8 C X X -> LOAD THE VALUE FROM INPUT REGISTER INTO THE DATA REGISTER.
+///\n			=> 8 D X X -> PLACE THE VALUE OF AC IN THE OUTPUT REGISTER.
+///\n     => 8 E X X -> SET THE INTERRUPT ENABLE ON.
+///\n      => 8 F X X -> SET THE INTERRUPT ENABLE OF.
 
 ///\n\n*************************************************************
 ///\nFORMAT IN WHICH THE CODE SHOULD BE PROVIDED :
@@ -125,11 +130,18 @@ const std::unordered_map<std::string, char> FIRST_BIT_MAP = {
         {"sds" , '8'},
         {"mds" , '8'},
         {"dds" , '8'},
+        {"lfs" , '8'},
 
+        {"csc" , '8'},
         {"cso" , '8'},
         {"csl" , '8'},
         {"cse" , '8'},
         {"csg" , '8'},
+
+        {"inp" , '8'},
+        {"out" , '8'},
+        {"ien" , '8'},
+        {"ief" , '8'},
 
         {"lfd" , '0'},
         {"ldc" , '0'},
@@ -144,6 +156,8 @@ const std::unordered_map<std::string, char> FIRST_BIT_MAP = {
         {"shr" , '0'},
         {"shl" , '0'},
         {"hlt" , '0'},
+        {"ssi" , '0'},
+        {"ibo" , '0'},
         {"ssi" , '0'},
 
         {"lfa" , '1'},{"lfa%" , '9'},
@@ -163,7 +177,9 @@ const std::unordered_map<std::string, char> SECOND_BIT_MAP = {
         {"sds" , '3'},
         {"mds" , '4'},
         {"dds" , '5'},
+        {"lfs" , '6'},
 
+        {"csc" , '7'},
         {"cso" , '8'},
         {"csl" , '9'},
         {"cse" , 'a'},
@@ -183,6 +199,8 @@ const std::unordered_map<std::string, char> SECOND_BIT_MAP = {
         {"shl" , 'b'},
 
         {"hlt" , 'f'},
+        {"ssi" , 'c'},
+        {"ibo" , 'e'},
         {"ssi" , 'c'},
 
         //As these instructions do not have a second bit dedicated to the functionality.
@@ -408,7 +426,7 @@ int main(int argc, char* argv[]) {
                 }
                 char first_hex = FIRST_BIT_MAP.at(tokens[SubroutineInstructionAddress]);
                 char second_hex = SECOND_BIT_MAP.at(tokens[SubroutineInstructionAddress]);
-                if (second_hex == '\0') {
+                if (first_hex != '0' && first_hex != '8') {
                     //for immediate addressing mode
                     auto &instn = tokens[SubroutineInstructionAddress];
                     if (instn == "lid" || instn == "lid%") {
@@ -454,7 +472,8 @@ int main(int argc, char* argv[]) {
                 SubroutinesNInstructions << "\n";
                 SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
             }
-            if (second_nibble != '\0') {
+            //if we can just get the whole word from the first two bits.
+            if (first_nibble == '0' || first_nibble == '8') {
                 SubroutinesNInstructions << first_nibble << second_nibble << "00 ";
                 //because this does not have an address.
                 InstructionIndex += 1;
@@ -464,7 +483,7 @@ int main(int argc, char* argv[]) {
                     if (*Instruction == "lid" || *Instruction == "lid%") {
                         SubroutinesNInstructions << first_nibble << std::setw(3) << std::hex << std::stoi(*InstructionAddress) << " ";
                     } else if (*Instruction == "lfa" || *Instruction == "str" || *Instruction == "lfa%" || *Instruction == "str%") {
-                        SubroutinesNInstructions << first_nibble << DataAddressMap.at(*InstructionAddress) << " ";
+                        SubroutinesNInstructions << first_nibble <<  std::setw(3) << std::hex << DataAddressMap.at(*InstructionAddress) << " ";
                     } else if (*Instruction == "ret" || *Instruction == "ret%") {///if return is used in the main instructions then we are
                         SubroutinesNInstructions << first_nibble << short_to_nibble_three(std::stoi(*InstructionAddress)) << " ";
                     } else {
@@ -492,6 +511,7 @@ int main(int argc, char* argv[]) {
     }
 
 
+    //Set the value at which we are jumping.
     OutputInOrder << "\n0x100: " << std::setw(4) << std::hex << InstructionStart << " ";
     OutputInOrder << SubroutinesNInstructions.str();
     OutputFile << OutputInOrder.str();
