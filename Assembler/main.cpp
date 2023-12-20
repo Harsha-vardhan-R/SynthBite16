@@ -28,7 +28,7 @@
 ///\n			=> 2 X X X | A X X X -> STR -> STORE      -> STORES THE PRESENT VALUE OF AC IN THE OPERAND ADDRESS.
 ///\n			=> 3 X X X | B X X X -> JMP -> JUMP_COND  -> JUMP CONDITIONALLY TO THE GIVEN ADDRESS.
 ///\n			=> 4 X X X | C X X X -> CAL -> CALL	      -> CALL A SUBROUTINE.
-///\n			=> 5 X X X | D X X X -> RET -> RETURN	    -> RETURN FROM A SUBROUTINE.
+///\n			=> 5 X X X | D X X X -> RET -> RETURN	  -> RETURN FROM A SUBROUTINE.
 ///\n			=> 6 X X X | E X X X -> LDI -> LOAD IMM   -> LOAD IMMEDIATE VALUE INTO THE AC, (THE HIGHEST 4 BITS WILL BE FILLED WITH 0).
 ///\n			=> 7 X X X | F X X X -> SWP -> SWAP	      -> SWAPS THE VALUES OF AC AND THE OPERAND.
 ///\n
@@ -39,31 +39,31 @@
 ///\n
 ///\n			-INSTRUCTIONS ON THE STACK :
 ///\n				=> 8 0 X X -> PSH  -> PUSH ONTO THE STACK		                -> (STACK TOP <- DR, SP <- SP + 1)
-///\n				=> 8 1 X X -> POP  -> POP FROM THE STACK		                -> POP THE VALUE FROM THE STACK TOP AND PLACE IT IN THE OUT BUFFER REGISTER.
-///\n				=> 8 2 X X -> ADS  -> ADD THE TOP TWO ELEMENTS IN THE STACK -> (STACK TOP <- STACK TOP + STACK TOP AFTER A POP)
-///\n				=> 8 3 X X -> SDS  -> SUBTRACT ON THE STACK		              -> (STACK TOP <- STACK TOP - STACK TOP AFTER A POP)
-///\n				=> 8 4 X X -> MDS  -> MULTIPLY ON THE STACK		              -> (STACK TOP <- STACK TOP * STACK TOP AFTER A POP)
+///\n				=> 8 1 X X -> POP  -> POP FROM THE STACK		                -> POP THE VALUE FROM THE STACK TOP AND PLACE IT IN THE AC REGISTER.
+///\n				=> 8 2 X X -> ADS  -> ADD THE TOP TWO ELEMENTS IN THE STACK     -> (STACK TOP <- STACK TOP + STACK TOP AFTER A POP)
+///\n				=> 8 3 X X -> SDS  -> SUBTRACT ON THE STACK		                -> (STACK TOP <- STACK TOP - STACK TOP AFTER A POP)
+///\n				=> 8 4 X X -> MDS  -> MULTIPLY ON THE STACK		                -> (STACK TOP <- STACK TOP * STACK TOP AFTER A POP)
 ///\n				=> 8 5 X X -> DDS  -> DIVIDE ON THE STACK		                -> (STACK TOP <- STACK TOP / STACK TOP AFTER A POP)
-///\n      => 8 6 X X -> LFS  -> LOAD FROM STACK TOP                   -> (AC <- STACK TOP)
+///\n               => 8 6 X X -> LFS  -> LOAD FROM STACK TOP                       -> (AC <- STACK TOP)
 ///\n
 ///\n			-INSTRUCTIONS ON ACCUMULATOR AND DATA REGISTER :
 ///\n				=> 0 0 X X -> LFD  -> LOAD FROM DR(AC <- DR) 		            -> LOAD THE VALUE OF THE DATA REGISTER INTO AC.
-///\n				=> 0 1 X X -> LDC  -> LOAD DATA COMPLIMENT(AC <- ~DR)	      -> LOAD THE COMPLIMENT OF THE VALUE OF DR INTO AC.
+///\n				=> 0 1 X X -> LDC  -> LOAD DATA COMPLIMENT(AC <- ~DR)	        -> LOAD THE COMPLIMENT OF THE VALUE OF DR INTO AC.
 ///\n				=> 0 2 X X -> ADD  -> ADD(DR + AC) 			                    -> ADD THE VALUE OF DR AND AC AND STORE IT IN AC.
 ///\n				=> 0 3 X X -> MUL  -> MULTIPLY(DR * AC) 		                -> MULTIPLY THE VALUE OF DR WITH AC.
-///\n				=> 0 4 X X -> SUB  -> SUBTRACT(AC <- DR + (~AC + 1))	      -> SUBTRACT AC FROM DR.
+///\n				=> 0 4 X X -> SUB  -> SUBTRACT(AC <- DR + (~AC + 1))	        -> SUBTRACT AC FROM DR.
 ///\n				=> 0 5 X X -> DIV  -> DIVIDE(AC <- REMAINDER OF AC/DR, QR <- AC/DR) -> DIVIDE AC WITH DR.
-///\n				=> 0 6 X X -> CMP  -> COMPARE THE VALUES OF DR AND AC       -> WILL SET THREE BITS BASED ON THE COMPARISION(SMALLER, EQUAL, GREATER).
-///\n				=> 0 7 X X -> AND  -> BITWISE AND(AC <- AC && DR)   	      -> BITWISE AND WITH AC.
-///\n				=> 0 8 X X -> BOR  -> BITWISE OR(AC <- AC || DR)	          -> BITWISE OR WITH AC.
-///\n				=> 0 9 X X -> XOR  -> BITWISE XOR(AC <- AC ///\n DR) 	          -> BITWISE XOR WITH AC.
+///\n				=> 0 6 X X -> CMP  -> COMPARE THE VALUES OF DR AND AC           -> WILL SET THREE BITS BASED ON THE COMPARISON(SMALLER, EQUAL, GREATER).
+///\n				=> 0 7 X X -> AND  -> BITWISE AND(AC <- AC && DR)   	        -> BITWISE AND WITH AC.
+///\n				=> 0 8 X X -> BOR  -> BITWISE OR(AC <- AC || DR)	            -> BITWISE OR WITH AC.
+///\n				=> 0 9 X X -> XOR  -> BITWISE XOR(AC <- AC ///\n DR) 	        -> BITWISE XOR WITH AC.
 ///\n				=> 0 A X X -> SHR  -> SHIFT AC TO RIGHT 		                -> SHIFT THE AC VALUE TO THE RIGHT.
-///\n				=> 0 B X X -> SHL  -> SHIFT AC TO THE LEFT		              -> SHIFT THE AC VALUE TO THE LEFT.
-///\n			  => 0 D X X -> RND  -> RANDOM NUMBER IN AC                   -> LOAD A RANDOM NUMBER IN AC.
-///\n        => 0 E X X -> IBO  -> INCREMENT BY ONE                      -> AC <= AC+1
+///\n				=> 0 B X X -> SHL  -> SHIFT AC TO THE LEFT		                -> SHIFT THE AC VALUE TO THE LEFT.
+///\n			    => 0 D X X -> RND  -> RANDOM NUMBER IN AC                       -> LOAD A RANDOM NUMBER IN AC.
+///\n               => 0 E X X -> IBO  -> INCREMENT BY ONE                          -> AC <= AC+1
 ///\n
 ///\n			-INSTRUCTIONS TO SET THE COMPARISON BITS :
-///\n      => 8 7 X X -> CSC ->  COMPARISON STATUS BIT -> COMPARE REGISTER CARRY(SETS THE COMPARE REGISTER THE PRESENT VALUE OF THE CARRY FLIP FLOP)
+///\n               => 8 7 X X -> CSC ->  COMPARISON STATUS BIT -> COMPARE REGISTER CARRY(SETS THE COMPARE REGISTER THE PRESENT VALUE OF THE CARRY FLIP FLOP)
 ///\n				=> 8 8 X X -> CSO ->  COMPARISON STATUS BIT -> COMPARE REGISTER ONE(SETS THE COMPARE ONE WITHOUT CHECKING ANY OTHER STUFF)
 ///\n				=> 8 9 X X -> CSL ->  COMPARISON STATUS BIT -> COMPARE REGISTER(LESSER)(COMPARE SET LESSER)
 ///\n				=> 8 A X X -> CSE ->  COMPARISON STATUS BIT -> COMPARE REGISTER(EQUAL)
@@ -71,43 +71,56 @@
 ///\n
 ///\n			-EXTRA
 ///\n				=> 0 C X X -> SSI -> SET SERIAL INPUT TO 1		-> SET THE SERIAL INPUTS FOR THE SHIFT OPERATIONS.(IT WILL BE 0 BY DEFAULT EVERY TIME)
-///\n				=> 0 F X X -> HLT -> PROGRAM HALT 			      -> HALT THE EXECUTION.
+///\n				=> 0 F X X -> HLT -> PROGRAM HALT 			    -> HALT THE EXECUTION.
 ///\n
 ///\n		-INSTRUCTIONS RELATED I/O :
 ///\n			=> 8 C X X -> LOAD THE VALUE FROM INPUT REGISTER INTO THE DATA REGISTER.
 ///\n			=> 8 D X X -> PLACE THE VALUE OF AC IN THE OUTPUT REGISTER.
-///\n     => 8 E X X -> SET THE INTERRUPT ENABLE ON.
-///\n      => 8 F X X -> SET THE INTERRUPT ENABLE OF.
+///\n           => 8 E X X -> SET THE INTERRUPT ENABLE ON.
+///\n           => 8 F X X -> SET THE INTERRUPT ENABLE OF.
+///\n
+///\n \n*************************************************************
+///\n FORMAT IN WHICH THE CODE SHOULD BE PROVIDED :
+///\n *** a simple 'hasm' code that calculates 15! and outputs the number.
+///\n
+///\n .data:
+///\n   num = 1;
+///\n   max = 16;
+///\n   output = 1;
+///\n   tmp = 0;
+///\n
+///\n _loop:
+///\n   lfs;
+///\n   mds;
+///\n   ibo;
+///\n   str tmp;
+///\n   lfa tmp;
+///\n   psh;
+///\n   lfa max;
+///\n   cmp;
+///\n   jmp loop;
+///\n   ret;
+///\n
+///\n
+///\n _main:
+///\n   ief;
+///\n   cso;
+///\n   call loop;
+///\n   ret;
+///\n
+///\n
+///\n .instructions:
+///\n   lfa output;
+///\n   psh;
+///\n   lfa num;
+///\n   psh;
+///\n   call main;
+///\n   out output;
+///\n   hlt;
+///\n
 
-///\n\n*************************************************************
-///\nFORMAT IN WHICH THE CODE SHOULD BE PROVIDED :
-//.This a sample 'hasm' code which does nothing(like literally), but given to show how the code should be written.
-//.data:
-//a = 32000;
-//c = 5;
-//b = &c;
-//d = 4095;
-//name2 = 443;
-//ans = 0;
-//
-//_more:
-//ret;
-//
-//_ntng:
-//lfa c;
-//lfd;
-//lfa name2;
-//cmp;
-//cse;
-//jmp more;
-//ret;
-//
-//.instructions:
-//cal ntng;
-//hlt;
 
-
-//"v3.0 hex words addressed"
+///\n output type : "v3.0 hex words addressed"
 
 struct [[maybe_unused]] synthasm{};
 //*************************************************************
@@ -185,6 +198,11 @@ const std::unordered_map<std::string, char> SECOND_BIT_MAP = {
         {"cse" , 'a'},
         {"csg" , 'b'},
 
+        {"inp" , 'c'},
+        {"out" , 'd'},
+        {"ien" , 'e'},
+        {"ief" , 'f'},
+
         {"lfd" , '0'},
         {"ldc" , '1'},
         {"add" , '2'},
@@ -197,7 +215,6 @@ const std::unordered_map<std::string, char> SECOND_BIT_MAP = {
         {"xor" , '9'},
         {"shr" , 'a'},
         {"shl" , 'b'},
-
         {"hlt" , 'f'},
         {"ssi" , 'c'},
         {"ibo" , 'e'},
@@ -381,8 +398,9 @@ int main(int argc, char* argv[]) {
         Subroutines[Subroutines.size()-1] = std::make_tuple(std::get<0>(Subroutines[Subroutines.size()-1]), std::get<1>(Subroutines[Subroutines.size()-1]), std::get<0>(Instructions));
     }
 
-    ///Writing the bootloader to the output file.(still need to write the actual stuff , this is just filler).
-    for (unsigned short i = 0x0; i < 0x100; i++) {
+    ///the first two instructions at 0x000 are setting the conditional bit to 1 and jumping to the address at which instructions start indirectly.
+    OutputInOrder << "0x000: 8800 b100 ";
+    for (unsigned short i = 0x2; i < 0x100; i++) {
         if (i % RAM_FORMAT_LENGTH == 0) {
             OutputInOrder << "\n";
             OutputInOrder << "0x" << std::setw(3) << std::setfill('0') << std::hex << DATA_START_ADDRESS << ": ";
@@ -395,11 +413,11 @@ int main(int argc, char* argv[]) {
     //PRESENT_ADDRESS++;
     auto new_o = 0x101;
     for (const auto& i : MachineStringData) {
-        SubroutinesNInstructions << i << " ";
         if (new_o % RAM_FORMAT_LENGTH == 0) {
             SubroutinesNInstructions << "\n";
             SubroutinesNInstructions << "0x" << std::setw(4) << std::hex << new_o << ": ";
         }
+        SubroutinesNInstructions << i << " ";
         new_o++;
     }
 
@@ -489,9 +507,8 @@ int main(int argc, char* argv[]) {
                     } else {
                         SubroutinesNInstructions << first_nibble << SubroutineAddressMap.at(*InstructionAddress) << " ";
                     }
-                    PRESENT_ADDRESS += 2;
                 } catch(const std::out_of_range& err) {
-                    std::cout << "The symbol : '" << tokens[InstructionIndex+1] << "', is not found in the scope" << std::endl;
+                    std::cout << "The symbol : '" << tokens[InstructionIndex+1] << "', is not found in the present scope" << std::endl;
                     return -1;
                 }
                 InstructionIndex += 2;
@@ -500,6 +517,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "No instruction matching with the given instruction name : '" << *Instruction << std::endl;
             return -1;
         }
+        PRESENT_ADDRESS += 1;
     }
 
     for (;PRESENT_ADDRESS <= 0xfff; PRESENT_ADDRESS++) {
