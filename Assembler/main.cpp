@@ -453,7 +453,7 @@ int main(int argc, char* argv[]) {
                 if (first_hex != '0' && first_hex != '8') {
                     //for immediate addressing mode
                     auto &instn = tokens[SubroutineInstructionAddress];
-                    if (instn == "lid" || instn == "lid%") {
+                    if (instn == "ldi" || instn == "ldi%") {
                         SubroutinesNInstructions << first_hex
                                                  << short_to_nibble(std::stoi(tokens[SubroutineInstructionAddress + 1]))
                                                  << " ";
@@ -504,14 +504,14 @@ int main(int argc, char* argv[]) {
             } else {//if the address is needed.
                 try {
                     std::string* InstructionAddress = &tokens[InstructionIndex + 1];
-                    if (*Instruction == "lid" || *Instruction == "lid%") {
-                        SubroutinesNInstructions << first_nibble << std::setw(3) << std::hex << std::stoi(*InstructionAddress) << " ";
+                    if (*Instruction == "ldi" || *Instruction == "ldi%") {
+                        SubroutinesNInstructions << first_nibble << short_to_nibble_three(std::stoi(*InstructionAddress)) << " ";
                     } else if (*Instruction == "lfa" || *Instruction == "str" || *Instruction == "lfa%" || *Instruction == "str%") {
                         SubroutinesNInstructions << first_nibble <<  std::setw(3) << std::hex << DataAddressMap.at(*InstructionAddress) << " ";
                     } else if (*Instruction == "ret" || *Instruction == "ret%") {///if return is used in the main instructions then we are
                         SubroutinesNInstructions << first_nibble << short_to_nibble_three(std::stoi(*InstructionAddress)) << " ";
                     } else {
-                        SubroutinesNInstructions << first_nibble << SubroutineAddressMap.at(*InstructionAddress) << " ";
+                        SubroutinesNInstructions  << first_nibble <<  std::setw(3) << std::hex << SubroutineAddressMap.at(*InstructionAddress) << " ";
                     }
                 } catch(const std::out_of_range& err) {
                     std::cout << "The symbol : '" << tokens[InstructionIndex+1] << "', is not found in the present scope" << std::endl;
