@@ -299,6 +299,9 @@ int main(int argc, char* argv[]) {
 
     //Vector of tokens.
     std::vector<std::string> tokens;
+
+    /// because we are splitting it always at these keys and removing the empty strings, you can have as many ':', '=' or ';' in the "hasm" code and the program will give
+    /// the exact same output, this miht not weem like a good plan, but it does not really matter, nobody is going to get confused, barely anyone even know about this.
     std::regex pattern(R"(\s+|:|=|;)");
     //Creating the vector by tokenizing using regex.
     std::sregex_token_iterator tokenIterator(InputData.begin(), InputData.end(), pattern, -1);
@@ -311,11 +314,14 @@ int main(int argc, char* argv[]) {
     }
 
     ///Process of assembling :
-    ///First we are going to iterate over the data and create a symbol tree for it.
+    /// First we are going to iterate over the data and create a symbol tree for it.
     /// we do not know how many instructions will be present, so we need to store instructions after storing the data.
-    ///at 0x101 we are going to store the address from which the instructions are starting which we are going to jump to indirectly from the bootstrap.
-    ///the status bit for the jump will be set in the boot strap.
-
+    /// at 0x101 we are going to store the address from which the instructions are starting which we are going to jump to indirectly from the bootstrap.
+    /// the status bit for the jump will be set in the boot strap.
+    
+    /// This program technically does not need a bootloader 
+    /// (for obvious reasons(because it is always going to be starting from the address 0x0 and we need not do anything other than that))
+    /// The fist instruction will be setting the conditional bit to one so that we we are unconditionally jumping to the given address 
 
     //****************************************************************
     //START ASSEMBLING!
