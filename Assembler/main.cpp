@@ -483,6 +483,15 @@ int main(int argc, char* argv[]) {
     }
 
     auto InstructionStart = PRESENT_ADDRESS;
+    //Our machine jumps to +1 address when called , jumped or returned, so for instructions we need to have a gap(1 word), and we jump to the next address.
+    if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
+        SubroutinesNInstructions << "\n";
+        SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+    }
+    //This will take care of the edge case, in the hardware.
+    SubroutinesNInstructions << "0000 ";
+    PRESENT_ADDRESS++;
+
 
     //Here we are going to store the instructions in the sequence.
     //ASSEMBLING_INSTRUCTIONS
