@@ -405,11 +405,11 @@ int main(int argc, char* argv[]) {
     }
 
     ///the first two instructions at 0x000 are setting the conditional bit to 1 and jumping to the address at which instructions start indirectly.
-    OutputInOrder << "0x000: 8800 b100 ";
-    for (unsigned short i = 0x2; i < 0x100; i++) {
+    OutputInOrder << "000: 8100 8800 b100 ";
+    for (unsigned short i = 0x3; i < 0x100; i++) {
         if (i % RAM_FORMAT_LENGTH == 0) {
             OutputInOrder << "\n";
-            OutputInOrder << "0x" << std::setw(3) << std::setfill('0') << std::hex << DATA_START_ADDRESS << ": ";
+            OutputInOrder << std::setw(3) << std::setfill('0') << std::hex << DATA_START_ADDRESS << ": ";
             DATA_START_ADDRESS += RAM_FORMAT_LENGTH;
         }
         OutputInOrder << short_to_nibble(0) << " ";
@@ -421,7 +421,7 @@ int main(int argc, char* argv[]) {
     for (const auto& i : MachineStringData) {
         if (new_o % RAM_FORMAT_LENGTH == 0) {
             SubroutinesNInstructions << "\n";
-            SubroutinesNInstructions << "0x" << std::setw(4) << std::hex << new_o << ": ";
+            SubroutinesNInstructions << std::setw(4) << std::hex << new_o << ": ";
         }
         SubroutinesNInstructions << i << " ";
         new_o++;
@@ -437,7 +437,7 @@ int main(int argc, char* argv[]) {
         auto latest_return = PRESENT_ADDRESS;
         if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
             SubroutinesNInstructions << "\n";
-            SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+            SubroutinesNInstructions << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
         }
         SubroutinesNInstructions << "0000 ";
         PRESENT_ADDRESS++;
@@ -446,7 +446,7 @@ int main(int argc, char* argv[]) {
             try {
                 if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
                     SubroutinesNInstructions << "\n";
-                    SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+                    SubroutinesNInstructions << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
                 }
                 char first_hex = FIRST_BIT_MAP.at(tokens[SubroutineInstructionAddress]);
                 char second_hex = SECOND_BIT_MAP.at(tokens[SubroutineInstructionAddress]);
@@ -486,7 +486,7 @@ int main(int argc, char* argv[]) {
     //Our machine jumps to +1 address when called , jumped or returned, so for instructions we need to have a gap(1 word), and we jump to the next address.
     if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
         SubroutinesNInstructions << "\n";
-        SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+        SubroutinesNInstructions << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
     }
     //This will take care of the edge case, in the hardware.
     SubroutinesNInstructions << "0000 ";
@@ -503,7 +503,7 @@ int main(int argc, char* argv[]) {
             char second_nibble = SECOND_BIT_MAP.at(*Instruction);
             if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
                 SubroutinesNInstructions << "\n";
-                SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+                SubroutinesNInstructions << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
             }
             //if we can just get the whole word from the first two bits.
             if (first_nibble == '0' || first_nibble == '8') {
@@ -538,14 +538,14 @@ int main(int argc, char* argv[]) {
     for (;PRESENT_ADDRESS <= 0xfff; PRESENT_ADDRESS++) {
         if (PRESENT_ADDRESS % RAM_FORMAT_LENGTH == 0) {
             SubroutinesNInstructions << "\n";
-            SubroutinesNInstructions << "0x" << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
+            SubroutinesNInstructions << std::setw(3) << std::hex << PRESENT_ADDRESS << ": ";
         }
         SubroutinesNInstructions << std::setw(4) << std::hex << "0000 ";
     }
 
 
     //Set the value at which we are jumping.
-    OutputInOrder << "\n0x100: " << std::setw(4) << std::hex << InstructionStart << " ";
+    OutputInOrder << "\n100: " << std::setw(4) << std::hex << InstructionStart << " ";
     OutputInOrder << SubroutinesNInstructions.str();
     OutputFile << OutputInOrder.str();
     std::cout << "Saving at : " << output_file_name << "\n";
