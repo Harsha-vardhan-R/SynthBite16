@@ -12,7 +12,7 @@ The design mainly focuses on :
 2 -> FLEXIBILITY - Leftover microinstructions can be modified** by the user to create their custom instructions.
 3 -> STACK!!! - we can perform operations on the stack(MAX_SIZE=8)
 ********************************************************
-**the user need to modify the mapper circuit and write the ROM for the specific instruction.
+**the user need to modify the lookup table ROM and write the ROM for the specific instruction.
 
 
 
